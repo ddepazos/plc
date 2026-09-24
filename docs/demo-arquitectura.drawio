@@ -1,0 +1,53 @@
+<?xml version='1.0' encoding='utf-8'?>
+<mxfile host="app.diagrams.net">
+  <diagram name="PLC demo actual" id="plc-demo">
+    <mxGraphModel dx="1200" dy="800" grid="1" gridSize="10" page="1" pageWidth="1400" pageHeight="900">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="ui" value="Frontend HTML / CSS / main.js&#10;Saldo, formularios, historial, detalle" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#171719;fontColor=#f7f7f7;strokeColor=#e10600;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="40" y="80" width="280" height="100" />
+        </mxCell>
+        <mxCell id="api" value="HTTP local 127.0.0.1&#10;server.js + routes/api.js" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#171719;fontColor=#f7f7f7;strokeColor=#e10600;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="370" y="80" width="280" height="100" />
+        </mxCell>
+        <mxCell id="model" value="Validación&#10;models/transaction.js" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#171719;fontColor=#f7f7f7;strokeColor=#e10600;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="700" y="80" width="280" height="100" />
+        </mxCell>
+        <mxCell id="wallet" value="Reglas de saldo + idempotencia&#10;services/wallet.js" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#171719;fontColor=#f7f7f7;strokeColor=#e10600;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="370" y="270" width="280" height="100" />
+        </mxCell>
+        <mxCell id="store" value="Cola y snapshots&#10;services/store.js" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#171719;fontColor=#f7f7f7;strokeColor=#e10600;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="700" y="270" width="280" height="100" />
+        </mxCell>
+        <mxCell id="disk" value="Persistencia local ignorada por Git&#10;backend/storage/demo.json" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#171719;fontColor=#f7f7f7;strokeColor=#e10600;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="1030" y="270" width="280" height="100" />
+        </mxCell>
+        <mxCell id="seed" value="Seed ficticio original&#10;data/plc-demo.json" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#171719;fontColor=#f7f7f7;strokeColor=#e10600;" vertex="1" parent="1">
+          <mxGeometry as="geometry" x="40" y="460" width="280" height="100" />
+        </mxCell>
+        <mxCell id="e0" value="GET estado / detalle · POST operación" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=0;endArrow=block;" edge="1" parent="1" source="ui" target="api">
+          <mxGeometry as="geometry" relative="1" />
+        </mxCell>
+        <mxCell id="e1" value="Validar" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=0;endArrow=block;" edge="1" parent="1" source="api" target="model">
+          <mxGeometry as="geometry" relative="1" />
+        </mxCell>
+        <mxCell id="e2" value="Operación válida" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=0;endArrow=block;" edge="1" parent="1" source="api" target="wallet">
+          <mxGeometry as="geometry" relative="1" />
+        </mxCell>
+        <mxCell id="e3" value="Actualizar en cola" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=0;endArrow=block;" edge="1" parent="1" source="wallet" target="store">
+          <mxGeometry as="geometry" relative="1" />
+        </mxCell>
+        <mxCell id="e4" value="Temporal + rename" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=0;endArrow=block;" edge="1" parent="1" source="store" target="disk">
+          <mxGeometry as="geometry" relative="1" />
+        </mxCell>
+        <mxCell id="e5" value="Inicializar si no hay archivo" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=0;endArrow=block;" edge="1" parent="1" source="seed" target="store">
+          <mxGeometry as="geometry" relative="1" />
+        </mxCell>
+        <mxCell id="e6" value="Fallback de solo lectura" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=0;endArrow=block;" edge="1" parent="1" source="seed" target="ui">
+          <mxGeometry as="geometry" relative="1" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

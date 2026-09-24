@@ -1,111 +1,109 @@
-$(function(){
-  const $menu=$('.main-nav');
-  let plcData=null;
-  const STORAGE_KEY='plc-demo-state-v1';
-  const isPage=location.pathname.includes('/pages/');
-  const dataUrl=isPage?'../data/plc-demo.json':'data/plc-demo.json';
-  const money=value=>new Intl.NumberFormat('es-CL',{minimumFractionDigits:2,maximumFractionDigits:2}).format(value)+' PLC';
-  const typeLabel=type=>type==='sent'?'Enviado':type==='topup'?'Carga de saldo':'Recibido';
-  const txSign=type=>type==='sent'?'-':'+';
-  const today=()=>new Date().toISOString().slice(0,10);
-  const makeId=prefix=>prefix+'-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,7);
-
-  function saveState(){
-    try{localStorage.setItem(STORAGE_KEY,JSON.stringify(plcData))}catch(error){console.warn('PLC localStorage:',error.message)}
-  }
-
-  function applyStoredState(seed){
-    try{
-      const saved=JSON.parse(localStorage.getItem(STORAGE_KEY)||'null');
-      if(saved?.users?.length&&Array.isArray(saved.transactions))return saved;
-    }catch(error){console.warn('PLC state:',error.message)}
-    return seed;
-  }
-
-  function renderUser(){
-    const user=plcData?.users?.[0];
-    if(!user)return;
-    $('[data-plc="name"]').text(user.name);
-    $('[data-plc="email"]').text(user.email);
-    $('[data-plc="balance"]').text(money(user.balance));
-    $('[data-plc="wallet"]').text(user.walletAddress);
-    $('[data-plc="sessions"]').text(user.security?.activeSessions??0);
-    $('[data-plc="two-factor"]').text(user.security?.twoFactor?'Activado':'Desactivado');
-    $('#wallet-address').text(user.walletAddress);
-    $('.js-max').attr('data-balance',user.balance);
-  }
-
-  function renderHistory(transactions){
-    const $list=$('#transaction-list');
-    if(!$list.length)return;
-    const rows=transactions.map(tx=>`<a class="transaction-row" href="detalle.html?id=${encodeURIComponent(tx.id)}" data-search="${typeLabel(tx.type)} ${tx.date} ${tx.reference}"><span>${typeLabel(tx.type)} · ${tx.date}</span><strong>${txSign(tx.type)}${money(tx.amount)}</strong></a>`).join('');
-    $list.html(rows||'<p>No hay movimientos de demostración.</p>');
-  }
-
-  function renderDetail(transactions){
-    if(!$('#transaction-detail').length)return;
-    const id=new URLSearchParams(location.search).get('id');
-    const tx=transactions.find(item=>item.id===id)||transactions[0];
-    if(!tx)return;
-    $('[data-transaction="amount"]').text(txSign(tx.type)+money(tx.amount));
-    $('[data-transaction="type"]').text(typeLabel(tx.type));
-    $('[data-transaction="date"]').text(tx.date);
-    $('[data-transaction="status"]').text(tx.status==='completed'?'Confirmada':tx.status);
-    $('[data-transaction="reference"]').text(tx.reference);
-  }
-
-  function refresh(){
-    renderUser();
-    const transactions=plcData?.transactions||[];
-    renderHistory(transactions);
-    renderDetail(transactions);
-  }
-
-  async function loadDemoData(){
-    try{
-      const response=await fetch(dataUrl,{cache:'no-store'});
-      if(!response.ok)throw new Error('No se pudo cargar plc-demo.json');
-      plcData=applyStoredState(await response.json());
-      refresh();
-    }catch(error){
-      console.warn('PLC demo data:',error.message);
-      $('.js-demo-status').text('Demo sin conexión al archivo de datos.');
-    }
-  }
-
-  $('.menu-toggle').on('click',function(){const open=$menu.toggleClass('open').hasClass('open');$(this).attr('aria-expanded',open)});
-  $menu.find('a').on('click',()=>{$menu.removeClass('open');$('.menu-toggle').attr('aria-expanded','false')});
-  $('[data-copy]').on('click',async function(){const $button=$(this),value=$($button.data('copy')).text().trim(),old=$button.text();try{await navigator.clipboard.writeText(value);$button.text('Copiado')}catch(e){$button.text('Copia manualmente')}setTimeout(()=>$button.text(old),1400)});
-  $('.js-max').on('click',function(){const balance=Number($(this).attr('data-balance')??plcData?.users?.[0]?.balance??0);$('#amount').val(balance.toFixed(2)).trigger('input')});
-
-  $('.js-send').on('click',function(e){
-    e.preventDefault();
-    const to=$('#recipient').val()?.trim(),amount=parseFloat($('#amount').val()),user=plcData?.users?.[0],balance=Number(user?.balance??0),$message=$('.form-message');
-    if(!to||!Number.isFinite(amount)||amount<=0){$message.text('Completa un destinatario y un monto válido.');return}
-    if(amount>balance){$message.text('El monto supera tu saldo disponible.');return}
-    const tx={id:makeId('tx-demo'),userId:user.id,type:'sent',amount:Number(amount.toFixed(2)),date:today(),status:'completed',reference:makeId('PLC-DEMO').toUpperCase(),recipient:to};
-    user.balance=Number((balance-amount).toFixed(2));
-    plcData.transactions=[tx,...(plcData.transactions||[])];
-    saveState();
-    location.href=`detalle.html?id=${encodeURIComponent(tx.id)}`;
+const $ = selector => document.querySelector(selector);
+const $$ = selector => [...document.querySelectorAll(selector)];
+const money = value => new Intl.NumberFormat('es-CL', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(value) + ' PLC';
+const label = type => ({sent:'Enviado', received:'Recibido', topup:'Recarga'})[type] || type;
+const sign = type => type === 'sent' ? '−' : '+';
+const isPage = location.pathname.includes('/pages/');
+let state, online = false;
+const pending = new Map();
+const status = document.createElement('p');
+status.className = 'demo-banner';
+status.setAttribute('role', 'status');
+status.textContent = 'Cargando demo…';
+($('main') || document.body).prepend(status);
+function text(selector, value) { $$(selector).forEach(el => el.textContent = value); }
+async function request(url, options = {}) {
+  const response = await fetch(url, { ...options, signal: AbortSignal.timeout(6000), cache: 'no-store' });
+  let result;
+  try { result = await response.json(); } catch { throw new Error('Respuesta de API no válida.'); }
+  if (!response.ok) throw new Error(result.error || 'No se pudo completar la solicitud.');
+  return result;
+}
+function rows(container, txs) {
+  if (!container) return;
+  container.replaceChildren();
+  const query = $('#transaction-search')?.value.trim().toLowerCase() || '';
+  txs.filter(tx => `${label(tx.type)} ${tx.date} ${tx.reference} ${tx.recipient || ''} ${tx.method || ''}`.toLowerCase().includes(query)).forEach(tx => {
+    const link = document.createElement('a');
+    link.className = 'transaction-row';
+    link.href = 'detalle.html?id=' + encodeURIComponent(tx.id);
+    const title = document.createElement('span');
+    title.textContent = `${label(tx.type)} · ${tx.date.slice(0, 10)}`;
+    const amount = document.createElement('strong');
+    amount.textContent = sign(tx.type) + money(tx.amount);
+    link.append(title, amount); container.append(link);
   });
-
-  $('.js-topup').on('submit',function(e){
-    e.preventDefault();
-    const amount=parseFloat($('#topup-amount').val()),method=$('#topup-method').val(),user=plcData?.users?.[0],$message=$(this).find('.form-message');
-    if(!user){$message.text('No se pudo cargar el usuario demo.');return}
-    if(!Number.isFinite(amount)||amount<=0){$message.text('Ingresa un monto mayor que 0.');return}
-    const tx={id:makeId('tx-demo'),userId:user.id,type:'topup',amount:Number(amount.toFixed(2)),date:today(),status:'completed',reference:makeId('PLC-TOPUP').toUpperCase(),method};
-    user.balance=Number((Number(user.balance)+amount).toFixed(2));
-    plcData.transactions=[tx,...(plcData.transactions||[])];
-    saveState();
-    $message.text('Carga simulada correctamente. Nuevo balance: '+money(user.balance));
-    $('#topup-amount').val('');
-    refresh();
-  });
-
-  $('.tabs [role="tab"]').on('click',function(){$(this).attr('aria-selected','true').siblings('[role="tab"]').attr('aria-selected','false')});
-  $('.form-stack .btn[type="button"]').not('.js-max').on('click',function(){const $button=$(this),old=$button.text();$button.text('Cambios guardados');setTimeout(()=>$button.text(old),1400)});
-  $('#transaction-search').on('input',function(){const q=$(this).val().trim().toLowerCase();$('#transaction-list .transaction-row').each(function(){$(this).toggle($(this).attr('data-search').toLowerCase().includes(q))})});
-  loadDemoData();
-});
+  if (!container.children.length) container.textContent = 'No hay movimientos que mostrar.';
+}
+function render() {
+  const user = state.users[0];
+  for (const field of ['name','email','walletAddress']) text(`[data-plc="${field === 'walletAddress' ? 'wallet' : field}"]`, user[field]);
+  text('[data-plc="balance"]', money(user.balance));
+  text('[data-plc="sessions"]', 'Demo · sin sesiones reales');
+  text('[data-plc="two-factor"]', 'No implementado en demo');
+  rows($('#transaction-list'), state.transactions);
+  rows($('#recent-transactions'), state.transactions.slice(0, 3));
+  rows($('#latest-transaction'), state.transactions.slice(0, 1));
+  $$('.demo-operation button[type="submit"]').forEach(button => button.disabled = !online);
+}
+function showDetail(tx) {
+  for (const [key, value] of Object.entries({ amount: sign(tx.type) + money(tx.amount), type: label(tx.type), date: tx.date, status: 'Completada · simulación', reference: tx.reference, recipient: tx.recipient || '—', method: ({bank:'Cuenta bancaria genérica',ethereum:'Ethereum simulado'})[tx.method] || '—', note: tx.note || '—' })) text(`[data-transaction="${key}"]`, value);
+}
+async function detail() {
+  if (!$('#transaction-detail')) return;
+  const id = new URLSearchParams(location.search).get('id');
+  try {
+    if (!id) throw new Error('Selecciona un movimiento desde el historial.');
+    const tx = online ? await request('/api/transactions/' + encodeURIComponent(id)) : state.transactions.find(t => t.id === id);
+    if (!tx) throw new Error('Transacción no encontrada en los datos disponibles.');
+    showDetail(tx);
+  } catch (error) { text('#detail-message', error.message); }
+}
+async function load() {
+  try {
+    state = await request('/api/state'); online = true;
+    status.textContent = 'DEMO · API local conectada · PLC ficticios, sin pagos reales';
+  } catch {
+    online = false;
+    try {
+      state = await request((isPage ? '../' : '') + 'data/plc-demo.json');
+      status.textContent = 'DEMO · API no disponible · datos seed de solo lectura. Inicia el servidor para operar.';
+    } catch { status.textContent = 'No se pudieron cargar la API ni los datos demo. Abre el proyecto mediante HTTP.'; return; }
+  }
+  render(); await detail();
+}
+async function operate(form, endpoint, body) {
+  const message = form.querySelector('.form-message');
+  if (!online) { message.textContent = 'API no disponible. El modo seed es de solo lectura.'; return; }
+  const serialized = JSON.stringify(body);
+  let operation = pending.get(form);
+  if (!operation || operation.serialized !== serialized) {
+    operation = { serialized, key: crypto.randomUUID() }; pending.set(form, operation);
+  }
+  const button = form.querySelector('button[type="submit"]');
+  if (button.disabled) return;
+  button.disabled = true; message.textContent = 'Procesando simulación…';
+  let confirmed = false;
+  try {
+    const result = await request(endpoint, { method: 'POST', headers: { 'Content-Type':'application/json', 'Idempotency-Key':operation.key }, body: serialized });
+    confirmed = true; pending.delete(form);
+    if (endpoint === '/api/send') { location.href = 'detalle.html?id=' + encodeURIComponent(result.transaction.id); return; }
+    state = await request('/api/state'); render(); form.reset();
+    message.textContent = 'Simulación completada. Saldo: ' + money(state.users[0].balance);
+    const link = document.createElement('a'); link.href = 'detalle.html?id=' + encodeURIComponent(result.transaction.id); link.textContent = ' Ver detalle'; message.append(link);
+  } catch (error) {
+    message.textContent = confirmed ? 'Operación confirmada, pero no se pudo actualizar el saldo. Recarga la página antes de otra operación.' : error.message + ' Si hubo un corte de conexión, reintenta sin cambiar los datos: se usará la misma clave para evitar duplicados.';
+    if (confirmed) online = false;
+  } finally { button.disabled = !online; }
+}
+$('.menu-toggle')?.addEventListener('click', event => { const open = $('.main-nav').classList.toggle('open'); event.currentTarget.setAttribute('aria-expanded', String(open)); });
+$$('.main-nav a').forEach(link => link.addEventListener('click', () => { $('.main-nav').classList.remove('open'); $('.menu-toggle').setAttribute('aria-expanded','false'); }));
+$$('[data-copy]').forEach(button => button.addEventListener('click', async () => { try { await navigator.clipboard.writeText($(button.dataset.copy).textContent); button.textContent = 'Copiado'; } catch { button.textContent = 'Selecciona la dirección para copiar'; } }));
+$('.js-max')?.addEventListener('click', () => { if (state) $('#amount').value = Math.min(state.users[0].balance, 1000000).toFixed(2); });
+$('.js-send-form')?.addEventListener('submit', event => { event.preventDefault(); operate(event.currentTarget, '/api/send', { recipient: $('#recipient').value.trim(), amount: $('#amount').value, note: $('[name="nota"]').value.trim() }); });
+$('.js-topup')?.addEventListener('submit', event => { event.preventDefault(); operate(event.currentTarget, '/api/topups', { amount: $('#topup-amount').value, method: $('#topup-method').value }); });
+$('.js-receive')?.addEventListener('submit', event => { event.preventDefault(); operate(event.currentTarget, '/api/receive', { amount: $('#receive-amount').value }); });
+$('#transaction-search')?.addEventListener('input', () => { if (state) rows($('#transaction-list'), state.transactions); });
+$('#topup-method')?.addEventListener('change', () => { text('#method-help', $('#topup-method').value === 'bank' ? 'Cuenta ficticia DEMO-BANCO-001. Sin número bancario real ni transferencia.' : 'Ethereum de demostración. No solicita wallet, red, gas, ETH ni firma. El monto está expresado en PLC ficticios.'); });
+window.addEventListener('focus', async () => { if (!online || [...pending.values()].length) return; try { state = await request('/api/state'); render(); } catch { status.textContent = 'DEMO · Conexión interrumpida. No se confirma ninguna operación sin respuesta de la API.'; } });
+load();

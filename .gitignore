@@ -1,0 +1,5 @@
+node_modules/
+backend/storage/*.json
+backend/storage/*.tmp
+.env
+*.log

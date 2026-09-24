@@ -12,16 +12,16 @@
 </head>
 <body>
   <div class="app-shell">
-    <aside class="sidebar"><a class="brand" href="../index.html">PLC</a><nav aria-label="Navegación principal"><a class="active" href="dashboard.html">Dashboard</a><a href="wallet.html">Wallet</a><a href="enviar.html">Enviar</a><a href="wallet.html#recibir">Recibir</a><a href="historial.html">Historial</a><a href="#comunidad">Comunidad</a><a href="perfil.html">Perfil</a><a href="perfil.html#seguridad">Seguridad</a></nav></aside>
+    <aside class="sidebar"><a class="brand" href="../index.html">PLC</a><nav aria-label="Navegación principal"><a class="active" href="dashboard.html">Dashboard</a><a href="wallet.html">Wallet</a><a href="enviar.html">Enviar</a><a href="wallet.html#recibir">Recibir</a><a href="cargar.html">Cargar saldo</a><a href="historial.html">Historial</a><a href="#comunidad">Comunidad</a><a href="perfil.html">Perfil</a><a href="perfil.html#seguridad">Seguridad</a></nav></aside>
     <main class="app-main">
-      <header class="app-header"><div><p class="eyebrow">PROLETARIAN COIN</p><h1>DASHBOARD</h1></div><div class="actions"><input type="search" aria-label="Buscar" placeholder="Buscar"><a class="btn btn-small" href="perfil.html">Perfil</a></div></header>
+      <header class="app-header"><div><p class="eyebrow">PROLETARIAN COIN</p><h1>DASHBOARD</h1></div><div class="actions"><a class="btn btn-small" href="perfil.html">Perfil</a></div></header>
       <section class="dashboard-grid">
         <article class="card balance-card"><p>Balance total</p><h2 data-plc="balance">2.450,00 PLC</h2><span>Tu saldo disponible</span><div class="actions"><a class="btn" href="enviar.html">Enviar</a><a class="btn btn-ghost" href="wallet.html#recibir">Recibir</a></div></article>
         <article class="card"><p class="eyebrow">COMUNIDAD</p><h2>DEL PUEBLO PARA EL PUEBLO</h2><p>Control, transparencia y una experiencia directa para administrar tus PLC.</p></article>
-        <article class="card"><h2>Actividad reciente</h2><a class="transaction-row" href="detalle.html"><span>Recibido</span><strong>+120 PLC</strong></a><a class="transaction-row" href="detalle.html"><span>Enviado</span><strong>-35 PLC</strong></a><a href="historial.html">Ver historial completo</a></article>
+        <article class="card"><h2>Actividad reciente</h2><div id="recent-transactions"></div><a href="historial.html">Ver historial completo</a></article>
         <article class="card" id="comunidad"><h2>Novedades PLC</h2><p>Consulta noticias y avances del proyecto desde tu panel.</p><a class="btn btn-ghost" href="../index.html#comunidad">Ir a comunidad</a></article>
       </section>
     </main>
   </div>
-  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script><script src="../assets/js/main.js"></script>
+  <script type="module" src="../assets/js/main.js"></script>
 </body></html>
