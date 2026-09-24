@@ -4,12 +4,13 @@ import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { config, root } from './config.js';
 import { createStore } from './services/store.js';
+import { createPostgresStore } from './services/postgres-store.js';
 import { api } from './routes/api.js';
 import { ApiError } from './models/transaction.js';
 
 const mime = { '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.json': 'application/json; charset=utf-8' };
 export async function createApp(settings = config()) {
-  const store = await createStore(settings);
+  const store = settings.databaseUrl ? await createPostgresStore(settings) : await createStore(settings);
   return http.createServer(async (req, res) => {
     res.setHeader('X-Content-Type-Options', 'nosniff');
     res.setHeader('Referrer-Policy', 'no-referrer');
@@ -18,7 +19,7 @@ export async function createApp(settings = config()) {
     try {
       const host = req.headers.host;
       const port = res.socket.localPort;
-      if (![ `127.0.0.1:${port}`, `localhost:${port}` ].includes(host)) throw new ApiError(403, 'Host no permitido.');
+      if ([ `127.0.0.1:${port}`, `localhost:${port}` ].includes(host) === false) throw new ApiError(403, 'Host no permitido.');
       if (req.headers.origin && req.headers.origin !== `http://${host}`) throw new ApiError(403, 'Origen no permitido.');
       if (req.headers['sec-fetch-site'] === 'cross-site') throw new ApiError(403, 'Solicitud externa bloqueada.');
       const url = new URL(req.url, `http://${host}`);
@@ -47,5 +48,5 @@ export async function createApp(settings = config()) {
 if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href) {
   const settings = config();
   const server = await createApp(settings);
-  server.listen(settings.port, settings.host, () => console.log(`PLC DEMO: http://${settings.host}:${server.address().port} — sin dinero real`));
+  server.listen(settings.port, settings.host, () => console.log(`PLC DEMO: http://${settings.host}:${server.address().port} · persistencia ${settings.databaseUrl ? 'PostgreSQL' : 'JSON'} · sin dinero real`));
 }
