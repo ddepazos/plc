@@ -1,16 +1,14 @@
--- Proletarian Coin (PLC) - esquema relacional base
--- PostgreSQL
-CREATE TABLE users (
+-- Proletarian Coin (PLC) - esquema relacional base (PostgreSQL)
+CREATE TABLE IF NOT EXISTS users (
   id BIGSERIAL PRIMARY KEY,
   name VARCHAR(120) NOT NULL,
   email VARCHAR(254) NOT NULL UNIQUE,
-  password_hash TEXT NOT NULL,
+  password_hash TEXT,
   status VARCHAR(20) NOT NULL DEFAULT 'active' CHECK (status IN ('active','blocked','disabled')),
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
-
-CREATE TABLE wallets (
+CREATE TABLE IF NOT EXISTS wallets (
   id BIGSERIAL PRIMARY KEY,
   user_id BIGINT NOT NULL UNIQUE REFERENCES users(id) ON DELETE CASCADE,
   address VARCHAR(120) NOT NULL UNIQUE,
@@ -19,8 +17,7 @@ CREATE TABLE wallets (
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
-
-CREATE TABLE transactions (
+CREATE TABLE IF NOT EXISTS transactions (
   id UUID PRIMARY KEY,
   wallet_id BIGINT NOT NULL REFERENCES wallets(id) ON DELETE RESTRICT,
   type VARCHAR(20) NOT NULL CHECK (type IN ('sent','received','topup')),
@@ -32,9 +29,8 @@ CREATE TABLE transactions (
   note VARCHAR(140),
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
-CREATE INDEX idx_transactions_wallet_created ON transactions(wallet_id, created_at DESC);
-
-CREATE TABLE idempotency_requests (
+CREATE INDEX IF NOT EXISTS idx_transactions_wallet_created ON transactions(wallet_id, created_at DESC);
+CREATE TABLE IF NOT EXISTS idempotency_requests (
   id BIGSERIAL PRIMARY KEY,
   request_key VARCHAR(100) NOT NULL UNIQUE,
   operation VARCHAR(30) NOT NULL,
@@ -42,8 +38,7 @@ CREATE TABLE idempotency_requests (
   transaction_id UUID REFERENCES transactions(id) ON DELETE SET NULL,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
-
-CREATE TABLE user_sessions (
+CREATE TABLE IF NOT EXISTS user_sessions (
   id UUID PRIMARY KEY,
   user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   token_hash TEXT NOT NULL UNIQUE,
@@ -51,9 +46,8 @@ CREATE TABLE user_sessions (
   revoked_at TIMESTAMPTZ,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
-CREATE INDEX idx_sessions_user ON user_sessions(user_id);
-
-CREATE TABLE security_settings (
+CREATE INDEX IF NOT EXISTS idx_sessions_user ON user_sessions(user_id);
+CREATE TABLE IF NOT EXISTS security_settings (
   user_id BIGINT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
   two_factor_enabled BOOLEAN NOT NULL DEFAULT FALSE,
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
