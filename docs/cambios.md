@@ -1,6 +1,6 @@
 # Inventario exacto de cambios
 
-Base: `939c831` (rama `main`).
+Base: `939c831` (rama `main`). Incluye la corrección posterior de responsive móvil, acentos y ayuda de recargas, junto con evidencia de pruebas de navegador.
 
 ## Modificados (12)
 

@@ -95,7 +95,7 @@ plc/
 │   └── test/api.test.js        # pruebas integradas de API, persistencia y enlaces
 └── docs/
     ├── plc-arquitectura.drawio # diagrama previo conservado como referencia histórica
-    ├── demo-arquitectura.drawio# nuevo diagrama editable de la implementación actual
+    ├── demo-arquitectura.drawio # nuevo diagrama editable de la implementación actual
     ├── arquitectura.md        # decisiones, modelo, consistencia y límites
     ├── interacciones.md       # contrato de cada interacción frontend/backend y Figma
     ├── verificacion.md        # evidencia de pruebas y lista de comprobación visual
@@ -168,11 +168,11 @@ Errores: 400 validación/JSON/clave; 403 host u origen externo; 404 ruta/transac
 
 Consulta [arquitectura](docs/arquitectura.md), [interacciones](docs/interacciones.md), [verificación](docs/verificacion.md) e [inventario de cambios](docs/cambios.md). Abre `docs/demo-arquitectura.drawio` en diagrams.net para editarlo; el archivo previo se conserva.
 
-[Figma: Proletarian Coin — Demo e interacciones backend](https://www.figma.com/design/oO77Doeh7yNvOOfZCaPusV). Se creó el archivo en el equipo personal, pero **la carga de pantallas y anotaciones quedó bloqueada por el límite de llamadas de Figma Starter**. El archivo aún está vacío; la carpeta solicitada tampoco pudo crearse debido a un error de sesión del navegador integrado. `docs/interacciones.md` contiene el material preparado para completar esa entrega sin reinterpretar el backend.
+[Figma: Proletarian Coin — Demo e interacciones backend](https://www.figma.com/design/oO77Doeh7yNvOOfZCaPusV). Se creó el archivo en el equipo personal, pero **la carga de pantallas y anotaciones quedó bloqueada por el límite de llamadas de Figma Starter**. El archivo aún está vacío; la carpeta solicitada tampoco pudo crearse: la interfaz de Figma indica que crear más carpetas requiere el plan Profesional. `docs/interacciones.md` contiene el material preparado para completar esa entrega sin reinterpretar el backend.
 
 ## Próximos pasos
 
-1. Completar pantallas y anotaciones en Figma cuando vuelva a estar disponible el conector; verificar móvil y escritorio visualmente.
+1. Completar pantallas y anotaciones en Figma cuando vuelva a estar disponible el conector.
 2. Persistir claves pendientes en el cliente para recuperación entre recargas, y añadir paginación, límites de historial y control de tasa.
 3. Migrar a SQLite/PostgreSQL con transacciones, migraciones y libro mayor de doble entrada antes de soportar cuentas múltiples.
 4. Diseñar autenticación real, autorización por cuenta, gestión segura de sesiones y pruebas de seguridad.

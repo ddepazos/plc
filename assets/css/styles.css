@@ -5,3 +5,6 @@
 button:disabled{opacity:.5;cursor:not-allowed}a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid #fff;outline-offset:4px}
 .app-main,.card,.dashboard-grid{min-width:0}.transaction-row>*{min-width:0;overflow-wrap:anywhere}.transaction-row strong{text-align:right}#wallet-address,.form-message{overflow-wrap:anywhere}.form-message a{text-decoration:underline}
 @media(max-width:560px){.transaction-row{align-items:flex-start;flex-wrap:wrap}.transaction-row strong{text-align:left}.demo-banner{font-size:.85rem}.auth-card{padding:1.25rem}}
+/* La navegación horizontal no debe ensanchar la columna móvil. */
+.app-shell{grid-template-columns:250px minmax(0,1fr)}.sidebar{min-width:0}.sidebar nav{max-width:100%}.demo-banner{overflow-wrap:anywhere}
+@media(max-width:850px){.app-shell{grid-template-columns:minmax(0,1fr)}}

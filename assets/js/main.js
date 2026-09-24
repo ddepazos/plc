@@ -89,6 +89,7 @@ async function operate(form, endpoint, body) {
     confirmed = true; pending.delete(form);
     if (endpoint === '/api/send') { location.href = 'detalle.html?id=' + encodeURIComponent(result.transaction.id); return; }
     state = await request('/api/state'); render(); form.reset();
+    form.querySelector('select')?.dispatchEvent(new Event('change'));
     message.textContent = 'Simulación completada. Saldo: ' + money(state.users[0].balance);
     const link = document.createElement('a'); link.href = 'detalle.html?id=' + encodeURIComponent(result.transaction.id); link.textContent = ' Ver detalle'; message.append(link);
   } catch (error) {

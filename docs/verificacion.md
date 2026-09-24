@@ -15,18 +15,19 @@
 
 Se conservaron estructura, colores, tipografía y reglas responsive originales. Se añadieron límites de ancho mínimo, ajuste de referencias largas, select oscuro, foco visible y botones deshabilitados. Se revisaron los puntos de corte 850/560 px y las rutas HTML → CSS/JS → JSON/API. Se corrigieron actividad reciente fija, enlace FAQ sin destino, detalle que elegía otra transacción y formularios que aparentaban autenticación/guardado real.
 
-## Pendiente de verificación visual interactiva
+## Verificación interactiva ejecutada
 
-El navegador integrado falló al crear una pestaña por un error de sesión. No se afirma haber realizado pruebas visuales de navegador ni capturas responsive. Comprobar manualmente a 390, 768 y 1440 px:
+Se recuperó el navegador integrado y se probó la demo usando un archivo de persistencia de preview aislado del repositorio.
 
-- Portada, navegación móvil desplazable, tarjetas sin desbordamiento horizontal.
-- Acceso demo sin campos de contraseña; perfil explícitamente de solo lectura.
-- Enviar 25,10 PLC a PLC-DEMO-DESTINO, comprobar detalle y saldo.
-- Recibir 10,20 y recargar por banco y Ethereum; comprobar métodos en detalle.
-- Rechazar sobregiro y tres decimales; filtrar historial y abrir id inexistente.
-- Reiniciar servidor y verificar persistencia. Usar un archivo distinto para pruebas manuales.
-- Servir solo frontend: banda seed y escrituras deshabilitadas. No abrir por file://.
-- Teclado, foco, mensajes anunciados, copiar dirección y referencias/notas largas.
+- Envío de 25,10 PLC a PLC-DEMO-DESTINO: detalle con nota, referencia e importe; saldo 2.424,90.
+- Recepción de 10,20: saldo 2.435,10; recarga bancaria de 100: 2.535,10; recarga Ethereum de 20: saldo final 2.555,10.
+- Revisión visual de dashboard a 390/768/1440 px y recarga en móvil/escritorio. Se corrigió un desbordamiento de la navegación móvil con minmax(0,1fr) y min-width:0.
+- Medición de las ocho pantallas de pages/ a 390 px: ningún ancho de documento supera el viewport.
+- Acceso demo revisado: texto en español correcto y sin contraseña. Se corrigió una recodificación accidental de acentos.
+- Corrección de ayuda de método tras resetear el formulario: vuelve a coincidir con la opción bancaria predeterminada.
+- Servidor estático sin API: wallet muestra saldo seed 2.450, banda de solo lectura y recepción deshabilitada. No se usa fallback para confirmar escrituras.
+
+Alcance: estas comprobaciones no equivalen a una auditoría integral de accesibilidad ni a cobertura automática de todos los navegadores. Las pruebas de API cubren sobregiro, persistencia, concurrencia y validaciones; la revisión de interfaz cubrió el flujo principal.
 
 ## Figma
 

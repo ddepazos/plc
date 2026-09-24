@@ -4,7 +4,7 @@
 
 Archivo creado: https://www.figma.com/design/oO77Doeh7yNvOOfZCaPusV
 
-Equipo personal seleccionado por el usuario. El archivo está vacío: Figma devolvió límite de llamadas Starter durante el descubrimiento de bibliotecas. La creación de una carpeta/proyecto en el navegador también quedó bloqueada por un error de sesión de Codex. No se cambió de plan, no se pagó y no se crearon pantallas de las que no exista evidencia.
+Equipo personal seleccionado por el usuario. El archivo está vacío: Figma devolvió límite de llamadas Starter durante el descubrimiento de bibliotecas. Tras recuperar el navegador, la interfaz del equipo indicó que crear más carpetas requiere el plan Profesional. La carpeta solicitada no se creó. No se cambió de plan, no se pagó y no se crearon pantallas de las que no exista evidencia.
 
 ## Inventario de pantallas
 
