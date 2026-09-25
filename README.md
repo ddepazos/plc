@@ -27,9 +27,9 @@ La suite incluye pruebas del adaptador PostgreSQL, por eso requiere instalar `pg
 | --- | --- | --- |
 | `PORT` | `3000` | Puerto HTTP; usa otro si está ocupado. |
 | `PLC_DATA_FILE` | `backend/storage/demo.json` | Archivo JSON de desarrollo; las rutas relativas se resuelven desde el directorio de ejecución. |
-| `DATABASE_URL` | Sin valor | Si está definida, usa PostgreSQL en vez del archivo JSON. No hay conversión automática de datos entre ambos modos. |
+| `DATABASE_URL` | Sin valor | Si está definida, usa PostgreSQL en vez del archivo JSON. No hay conversión automática de datos entre ambos modos. |\n| `NODE_ENV` | Sin valor | Usa `production` en Render para habilitar configuración de despliegue. |\n| `HOST` | `127.0.0.1` local / `0.0.0.0` producción | Dirección donde escucha Node. |\n| `ALLOWED_ORIGINS` | Vacío | Orígenes frontend permitidos, separados por coma; por ejemplo `https://ddepazos.github.io`. |
 
-El host está fijado a `127.0.0.1` para que la demo no se publique accidentalmente en la red. No existe modo producción. No se lee `.env` automáticamente; configura variables en el entorno antes de iniciar.
+En desarrollo el host permanece en `127.0.0.1`. Con `NODE_ENV=production`, el servidor puede escuchar en `0.0.0.0` para Render y limita solicitudes de navegador mediante `ALLOWED_ORIGINS`. No se lee `.env` automáticamente; configura variables en el entorno del proveedor. Usa `.env.example` solo como plantilla y nunca subas credenciales reales.
 
 PowerShell:
 
@@ -79,7 +79,7 @@ flowchart LR
   SEED -->|API inaccesible al cargar: solo lectura| UI
 ```
 
-El servidor también entrega los archivos públicos. No necesitas dos servidores ni CORS. `DATABASE_URL` elige PostgreSQL al arrancar; de lo contrario se usa el JSON local. El cliente consulta el estado al entrar en cada pantalla y al volver a enfocar la ventana, y lo refresca después de una operación. No hay WebSocket ni sincronización continua entre pestañas.
+El servidor también puede entregar los archivos públicos. En desarrollo funciona a mismo origen; para el despliegue separado GitHub Pages → Render, el backend habilita CORS únicamente para los orígenes declarados en `ALLOWED_ORIGINS`. `DATABASE_URL` elige PostgreSQL al arrancar; de lo contrario se usa el JSON local. El cliente consulta el estado al entrar en cada pantalla y al volver a enfocar la ventana, y lo refresca después de una operación. No hay WebSocket ni sincronización continua entre pestañas.
 
 ### Árbol y función de cada archivo
 
@@ -184,12 +184,12 @@ Errores: 400 validación/JSON/clave; 403 host u origen externo; 404 ruta/transac
 
 ## Seguridad y alcance demo
 
-- Servidor limitado a loopback, validación de Host/Origin y bloqueo de `Sec-Fetch-Site: cross-site`; sin CORS abierto.
+- En desarrollo, servidor limitado a loopback con validación de Host/Origin. En producción, Render puede escuchar en `0.0.0.0` y CORS solo responde a los orígenes incluidos en `ALLOWED_ORIGINS`; no se usa CORS abierto.
 - POST exige JSON y clave; límites de tamaño, montos y texto. Dinero ficticio calculado con enteros.
 - Lista permitida de archivos estáticos: el servidor no publica `.git`, backend, persistencia o configuración.
 - CSP, `nosniff`, `no-referrer`, `no-store` y protección contra marcos. Render de contenido dinámico con `textContent`, no HTML interpolado.
 - En modo JSON, persistencia ignorada por Git, archivo temporal y cambio de nombre, sin garantizar durabilidad de base de datos ante cortes de energía. Un archivo ilegible bloquea el inicio: no se sustituye silenciosamente por seed. En PostgreSQL, el operador debe proteger URL, acceso, respaldos y transporte; la demo no configura esto por sí sola.
-- Sin autenticación, autorización multiusuario, cifrado de base de datos, rate limiting, auditoría inmutable ni defensa completa contra actores locales. **No publicar este servidor en Internet.**
+- Sin autenticación, autorización multiusuario, cifrado de base de datos, rate limiting, auditoría inmutable ni defensa completa contra actores locales. **El despliegue público sigue siendo una demo sin autenticación y no debe procesar dinero, credenciales ni datos sensibles reales.**
 - Banco: solo etiqueta genérica y referencia `DEMO-BANCO-001`, sin proveedor ni cuenta utilizable.
 - Ethereum: solo opción de simulación; no RPC, MetaMask, contrato, red, firma, hash real, conversión ETH/PLC ni gas.
 - Perfil y seguridad son información de demo, no funciones reales de cuenta. QR ficticio anterior retirado para no aparentar una dirección operativa.
