@@ -2,7 +2,15 @@
 
 ## Automatizada, ejecutada
 
-`node --test backend/test/api.test.js`: 6 pruebas aprobadas, 0 fallos.
+`pnpm test` (`node --test backend/test/*.test.js`): **11 pruebas aprobadas, 0 fallos** tras los cambios del modo PostgreSQL. La suite requiere instalar `pg` con `npm install` o `pnpm install`. Las seis pruebas originales de API y navegador se mantienen; se agregaron las siguientes:
+
+- Rechazo de campos ajenos a cada operación, incluso al reutilizar una clave, sin alterar saldo ni historial.
+- Seed PostgreSQL con UUID compatibles con el esquema.
+- Rechazo de una base con una cuenta ajena sin tocar su saldo.
+- Dos instancias que vuelven a leer el saldo bajo bloqueo: solo una confirma el envío si ambas juntas causarían sobregiro.
+- Reintento de una clave confirmada por otra instancia sin duplicar crédito.
+
+Las cuatro pruebas PostgreSQL usan un Pool simulado en memoria. Verifican el contrato del adaptador, pero no reemplazan una prueba contra un servidor PostgreSQL real.
 
 1. Saldo inicial, envío decimal, recepción, ambas recargas, detalle por id, reintento idempotente, conflicto de clave y reapertura de persistencia.
 2. Montos cero/negativos/imprecisos/no numéricos, sobregiro, destino real o propio, método inválido, campos no admitidos y falta de clave: rechazados sin modificar saldo.

@@ -13,7 +13,12 @@ export function cents(value) {
 }
 export function makeTransaction(type, body, userId) {
   if (!body || typeof body !== 'object' || Array.isArray(body)) throw new ApiError(400, 'Objeto JSON requerido.');
-  const allowed = new Set(['amount', 'recipient', 'note', 'method']);
+  const allowed = {
+    sent: new Set(['amount', 'recipient', 'note']),
+    received: new Set(['amount']),
+    topup: new Set(['amount', 'method'])
+  }[type];
+  if (!allowed) throw new ApiError(400, 'Tipo de operación inválido.');
   if (Object.keys(body).some(key => !allowed.has(key))) throw new ApiError(400, 'Campo desconocido. No envíes datos personales ni credenciales.');
   const amountCents = cents(body.amount);
   if (type === 'sent' && (typeof body.recipient !== 'string' || !/^PLC-DEMO-[A-Z0-9-]{3,60}$/.test(body.recipient))) throw new ApiError(400, 'Usa una dirección ficticia PLC-DEMO-DESTINO.');

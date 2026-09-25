@@ -48,6 +48,17 @@ test('rechaza montos, credenciales, métodos y sobregiros sin mutar saldo',async
  assert.equal((await post('/api/receive',{amount:10},'')).status,400);
  assert.equal((await get('/api/wallet')).body.balance,2450);
 });
+test('cada operación rechaza campos que no pertenecen a su contrato',async t=>{
+ const {get,post}=await fixture(t);
+ const key=randomUUID();
+ assert.equal((await post('/api/receive',{amount:2},key)).status,200);
+ assert.equal((await post('/api/receive',{amount:2,recipient:'PLC-DEMO-DESTINO'},key)).status,400);
+ assert.equal((await post('/api/receive',{amount:2,method:'bank'})).status,400);
+ assert.equal((await post('/api/send',{amount:2,recipient:'PLC-DEMO-DESTINO',method:'bank'})).status,400);
+ assert.equal((await post('/api/topups',{amount:2,method:'bank',note:'extra'})).status,400);
+ assert.equal((await get('/api/wallet')).body.balance,2452);
+ assert.equal((await get('/api/transactions')).body.length,5);
+});
 test('concurrencia no pierde actualizaciones ni permite sobregiro',async t=>{
  const {get,post}=await fixture(t);
  const results=await Promise.all([1,2,3].map(()=>post('/api/send',{amount:1000,recipient:'PLC-DEMO-DESTINO'})));

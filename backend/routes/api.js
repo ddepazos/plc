@@ -3,6 +3,7 @@ import { snapshot, publicTx, transact } from '../services/wallet.js';
 
 export async function api(req, pathname, store, settings) {
   if (req.method === 'GET') {
+    if (pathname !== '/api/health') await store.refresh?.();
     if (pathname === '/api/health') return { status: 'ok', mode: 'demo' };
     if (pathname === '/api/state') return snapshot(store.read());
     if (pathname === '/api/wallet') return snapshot(store.read()).users[0];

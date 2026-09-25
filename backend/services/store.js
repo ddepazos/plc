@@ -13,7 +13,17 @@ export async function createStore({ storeFile, seedFile }) {
     delete state.user.balance;
     await persist(state);
   }
-  if (state.version !== 1 || !Number.isSafeInteger(state.user?.balanceCents) || state.user.balanceCents < 0 || !Array.isArray(state.transactions) || !state.requests) throw new Error('Persistencia inválida. Conserva el archivo para diagnóstico.');
+  const transactions = Array.isArray(state?.transactions) ? state.transactions : [];
+  const ids = new Set(transactions.map(tx => tx?.id));
+  const validRequests = state?.requests && typeof state.requests === 'object' && !Array.isArray(state.requests) &&
+    Object.entries(state.requests).every(([key, request]) =>
+      /^[a-zA-Z0-9-]{16,100}$/.test(key) && typeof request?.signature === 'string' &&
+      typeof request.id === 'string' && ids.has(request.id));
+  if (state?.version !== 1 || !Number.isSafeInteger(state.user?.balanceCents) || state.user.balanceCents < 0 ||
+      !Array.isArray(state.transactions) || transactions.some(tx => !tx || typeof tx.id !== 'string' ||
+      !Number.isSafeInteger(tx.amountCents) || tx.amountCents <= 0) || !validRequests) {
+    throw new Error('Persistencia inválida. Conserva el archivo para diagnóstico.');
+  }
   async function persist(next) {
     await mkdir(path.dirname(storeFile), { recursive: true });
     await writeFile(storeFile + '.tmp', JSON.stringify(next, null, 2), { mode: 0o600 });

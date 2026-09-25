@@ -4,14 +4,16 @@ import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { config, root } from './config.js';
 import { createStore } from './services/store.js';
-import { createPostgresStore } from './services/postgres-store.js';
 import { api } from './routes/api.js';
 import { ApiError } from './models/transaction.js';
 
 const mime = { '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.json': 'application/json; charset=utf-8' };
 export async function createApp(settings = config()) {
-  const store = settings.databaseUrl ? await createPostgresStore(settings) : await createStore(settings);
-  return http.createServer(async (req, res) => {
+  // El modo JSON funciona sin instalar pg; PostgreSQL se carga sólo si se configura.
+  const store = settings.databaseUrl
+    ? await (await import('./services/postgres-store.js')).createPostgresStore(settings)
+    : await createStore(settings);
+  const server = http.createServer(async (req, res) => {
     res.setHeader('X-Content-Type-Options', 'nosniff');
     res.setHeader('Referrer-Policy', 'no-referrer');
     res.setHeader('Cache-Control', 'no-store');
@@ -44,6 +46,8 @@ export async function createApp(settings = config()) {
       if (!error.status) console.error(error);
     }
   });
+  server.on('close', () => { if (store.close) void store.close().catch(console.error); });
+  return server;
 }
 if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href) {
   const settings = config();

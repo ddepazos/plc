@@ -61,4 +61,4 @@ erDiagram
     }
 ```
 
-Este DER refleja la siguiente etapa del backend, no la persistencia JSON actualmente activa.
+Este DER refleja el modo PostgreSQL opcional del backend. `user_sessions` y `security_settings` son tablas preparatorias: el acceso, las sesiones y la verificación en dos pasos aún no están implementados. Sin `DATABASE_URL`, la demo sigue usando el archivo JSON local.
