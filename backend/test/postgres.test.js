@@ -122,6 +122,25 @@ test('PostgreSQL rechaza una base con otra cuenta y conserva su saldo', async ()
   assert.equal(db.closedPools, 1, 'El pool se cierra si falla el inicio');
 });
 
+test('PostgreSQL sin migración aborta el arranque y cierra la conexión', async () => {
+  const calls = [];
+  const missingTable = Object.assign(new Error('relation "users" does not exist'), { code: '42P01' });
+  const poolFactory = () => ({
+    connect: async () => ({
+      query: async sql => {
+        calls.push(sql);
+        if (sql.startsWith('SELECT COUNT')) throw missingTable;
+        return { rows: [] };
+      },
+      release: () => calls.push('release')
+    }),
+    end: async () => calls.push('end')
+  });
+  await assert.rejects(createPostgresStore(settings(poolFactory)), error => error.code === '42P01');
+  assert.ok(calls.includes('ROLLBACK'));
+  assert.deepEqual(calls.slice(-2), ['release', 'end']);
+});
+
 test('dos instancias leen saldo vigente bajo bloqueo y no permiten sobregiro', async t => {
   const { db, poolFactory } = database();
   const first = await createPostgresStore(settings(poolFactory));

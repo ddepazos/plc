@@ -30,14 +30,14 @@ Base: `939c831` (rama `main`). Incluye la corrección posterior de responsive m�
 - `backend/test/api.test.js`
 - `docs/arquitectura.md`
 - `docs/cambios.md`
-- `docs/demo-arquitectura.drawio`
+- `docs/demo-arquitectura.drawio` (creado en la primera entrega y retirado después)
 - `docs/interacciones.md`
 - `docs/verificacion.md`
 - `package.json`
 
-## Conservados sin cambios
+## Evolución posterior
 
 - `data/plc-demo.json`: seed/fallback original.
-- `docs/plc-arquitectura.drawio`: diagrama previo.
+- `docs/plc-arquitectura.drawio`: el diagrama previo se reemplazó por uno que refleja la API y la persistencia actuales.
 
-No se eliminó ningún archivo original. El estado runtime no se incluye en Git. Figma: se creó el archivo, pero la transferencia de pantallas quedó pendiente por límite Starter; ver `interacciones.md`.
+El diagrama alternativo `docs/demo-arquitectura.drawio` se retiró para evitar dos versiones contradictorias de la misma arquitectura. El estado runtime no se incluye en Git. Figma: se creó el archivo, pero la transferencia de pantallas quedó pendiente por límite Starter; ver `interacciones.md`.

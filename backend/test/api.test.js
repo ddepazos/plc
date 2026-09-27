@@ -4,6 +4,8 @@ import { mkdtemp, rm, readFile, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { randomUUID } from 'node:crypto';
+import http from 'node:http';
+import { spawnSync } from 'node:child_process';
 import { createApp } from '../server.js';
 import { config, root } from '../config.js';
 import { createStore } from '../services/store.js';
@@ -77,6 +79,61 @@ test('seguridad HTTP, archivos privados y JSON inválido',async t=>{
  assert.equal(malformed.status,400);
  const large=await post('/api/receive',{amount:1,note:'x'.repeat(9000)});assert.equal(large.status,413);
  const html=await fetch(base+'/pages/wallet.html');assert.equal(html.status,200);assert.match(html.headers.get('content-security-policy'),/frame-ancestors 'none'/);
+});
+test('configuración pública exige HTTPS y clave demo; acepta URL de Render', () => {
+ assert.equal(config({}).host, '127.0.0.1');
+ assert.throws(() => config({HOST:'0.0.0.0'}), /PUBLIC_ORIGIN/);
+ assert.throws(() => config({HOST:'0.0.0.0',PUBLIC_ORIGIN:'https://plc.example.test'}), /PLC_DEMO_PASSWORD/);
+ assert.throws(() => config({HOST:'0.0.0.0',PUBLIC_ORIGIN:'http://plc.example.test',PLC_DEMO_PASSWORD:'clave-de-prueba-larga'}), /HTTPS/);
+ assert.throws(() => config({HOST:'0.0.0.0',PUBLIC_ORIGIN:'https://plc.example.test/ruta',PLC_DEMO_PASSWORD:'clave-de-prueba-larga'}), /sin ruta/);
+ assert.throws(() => config({HOST:'0.0.0.0',PUBLIC_ORIGIN:'https://plc.example.test',PLC_DEMO_PASSWORD:'clave-de-prueba-larga'}), /DATABASE_URL/);
+ const settings=config({HOST:'0.0.0.0',RENDER_EXTERNAL_URL:'https://plc.example.test',PLC_DEMO_PASSWORD:'clave-de-prueba-larga',DATABASE_URL:'postgres://demo@localhost/plc'});
+ assert.equal(settings.publicOrigin,'https://plc.example.test');
+ assert.equal(settings.host,'0.0.0.0');
+});
+test('error de conexión PostgreSQL no imprime la contraseña', () => {
+ const password='secreto-de-prueba-no-real';
+ const result=spawnSync(process.execPath,[path.join(root,'backend/server.js')],{
+   env:{...process.env,HOST:'127.0.0.1',PORT:'0',DATABASE_URL:`postgres://demo:${password}@127.0.0.1:1/plc`},
+   encoding:'utf8',timeout:10000
+ });
+ assert.equal(result.status,1,result.stderr);
+ assert.match(result.stderr,/no se pudo iniciar la persistencia/);
+ assert.ok(!result.stderr.includes(password));
+});
+test('servicio público valida Host y Origin, requiere Basic Auth y permite health check', async t => {
+ const dir=await mkdtemp(path.join(os.tmpdir(),'plc-public-test-'));
+ // El test del servidor usa JSON aislado; config() exige PostgreSQL en el arranque público real.
+ const settings={...config({}),host:'0.0.0.0',publicOrigin:'https://plc.example.test',demoPassword:'clave-de-prueba-larga',port:0,storeFile:path.join(dir,'demo.json')};
+ const server=await createApp(settings);
+ await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
+ t.after(async()=>{await new Promise(resolve=>server.close(resolve));await rm(dir,{recursive:true,force:true});});
+ const base=`http://127.0.0.1:${server.address().port}`;
+ const auth='Basic '+Buffer.from('demo:clave-de-prueba-larga').toString('base64');
+ const request=(route,options={})=>new Promise((resolve,reject)=>{
+   const headers=Object.fromEntries(Object.entries({Host:'plc.example.test',...options.headers}).filter(([,value])=>value!==undefined));
+   const req=http.request(base+route,{method:options.method || 'GET',headers},res=>{
+     const chunks=[];
+     res.on('data',chunk=>chunks.push(chunk));
+     res.on('end',()=>resolve(new Response(Buffer.concat(chunks),{status:res.statusCode,headers:res.headers})));
+   });
+   req.on('error',reject);
+   req.end(options.body);
+ });
+ const health=await request('/api/health');
+ assert.equal(health.status,200,await health.text());
+ const anonymous=await request('/pages/wallet.html');
+ assert.equal(anonymous.status,401);
+ assert.match(anonymous.headers.get('www-authenticate'),/Basic/);
+ assert.equal((await request('/api/wallet',{headers:{Authorization:'Basic '+Buffer.from('demo:incorrecta').toString('base64')}})).status,401);
+ assert.equal((await request('/api/wallet',{headers:{Authorization:auth}})).status,200);
+ assert.equal((await request('/api/wallet',{headers:{Host:'otro.example.test',Authorization:auth}})).status,403);
+ const post=(headers={})=>request('/api/receive',{method:'POST',headers:{Authorization:auth,Origin:'https://plc.example.test','Content-Type':'application/json','Idempotency-Key':randomUUID(),...headers},body:JSON.stringify({amount:1})});
+ assert.equal((await post()).status,200);
+ assert.equal((await post({Origin:'http://plc.example.test'})).status,403);
+ assert.equal((await post({'Sec-Fetch-Site':'cross-site'})).status,403);
+ assert.equal((await post({Authorization:undefined})).status,401);
+ assert.equal((await (await request('/api/wallet',{headers:{Authorization:auth}})).json()).balance,2451);
 });
 test('archivo dañado no se reemplaza por seed',async t=>{
  const dir=await mkdtemp(path.join(os.tmpdir(),'plc-corrupt-'));t.after(()=>rm(dir,{recursive:true,force:true}));

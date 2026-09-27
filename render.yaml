@@ -1,0 +1,21 @@
+# PLC is a shared, fictitious demo. Neon is configured separately; no database
+# or secret is provisioned or stored by this Blueprint.
+services:
+  - type: web
+    name: plc-demo
+    runtime: node
+    plan: free
+    buildCommand: npm install --omit=dev
+    # Free web services cannot use Render's pre-deploy command. The SQL schema
+    # uses IF NOT EXISTS, so applying it before each start is repeatable.
+    startCommand: "npm run db:migrate && npm start"
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: HOST
+        value: "0.0.0.0"
+      - key: DATABASE_URL
+        sync: false
+      - key: PLC_DEMO_PASSWORD
+        sync: false

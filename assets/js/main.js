@@ -11,6 +11,7 @@ status.className = 'demo-banner';
 status.setAttribute('role', 'status');
 status.textContent = 'Cargando demo…';
 ($('main') || document.body).prepend(status);
+const connectedMessage = 'DEMO · API conectada · PLC ficticios, sin pagos reales';
 function text(selector, value) { $$(selector).forEach(el => el.textContent = value); }
 async function request(url, options = {}) {
   const response = await fetch(url, { ...options, signal: AbortSignal.timeout(6000), cache: 'no-store' });
@@ -56,18 +57,19 @@ async function detail() {
     if (!id) throw new Error('Selecciona un movimiento desde el historial.');
     const tx = online ? await request('/api/transactions/' + encodeURIComponent(id)) : state.transactions.find(t => t.id === id);
     if (!tx) throw new Error('Transacción no encontrada en los datos disponibles.');
+    text('#detail-message', '');
     showDetail(tx);
   } catch (error) { text('#detail-message', error.message); }
 }
 async function load() {
   try {
     state = await request('/api/state'); online = true;
-    status.textContent = 'DEMO · API local conectada · PLC ficticios, sin pagos reales';
+    status.textContent = connectedMessage;
   } catch {
     online = false;
     try {
       state = await request((isPage ? '../' : '') + 'data/plc-demo.json');
-      status.textContent = 'DEMO · API no disponible · datos seed de solo lectura. Inicia el servidor para operar.';
+      status.textContent = 'DEMO · API no disponible · datos iniciales de solo lectura. Las operaciones están desactivadas.';
     } catch { status.textContent = 'No se pudieron cargar la API ni los datos demo. Abre el proyecto mediante HTTP.'; return; }
   }
   render(); await detail();
@@ -106,5 +108,18 @@ $('.js-topup')?.addEventListener('submit', event => { event.preventDefault(); op
 $('.js-receive')?.addEventListener('submit', event => { event.preventDefault(); operate(event.currentTarget, '/api/receive', { amount: $('#receive-amount').value }); });
 $('#transaction-search')?.addEventListener('input', () => { if (state) rows($('#transaction-list'), state.transactions); });
 $('#topup-method')?.addEventListener('change', () => { text('#method-help', $('#topup-method').value === 'bank' ? 'Cuenta ficticia DEMO-BANCO-001. Sin número bancario real ni transferencia.' : 'Ethereum de demostración. No solicita wallet, red, gas, ETH ni firma. El monto está expresado en PLC ficticios.'); });
-window.addEventListener('focus', async () => { if (!online || [...pending.values()].length) return; try { state = await request('/api/state'); render(); } catch { status.textContent = 'DEMO · Conexión interrumpida. No se confirma ninguna operación sin respuesta de la API.'; } });
+window.addEventListener('focus', async () => {
+  if (!state || pending.size) return;
+  try {
+    state = await request('/api/state');
+    online = true;
+    status.textContent = connectedMessage;
+    render();
+    await detail();
+  } catch {
+    online = false;
+    status.textContent = 'DEMO · Conexión interrumpida. Las operaciones están desactivadas hasta recuperar la API.';
+    if (state) render();
+  }
+});
 load();

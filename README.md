@@ -1,6 +1,6 @@
-# Proletarian Coin — demo local con JSON o PostgreSQL
+# Proletarian Coin — demo con API y persistencia JSON o PostgreSQL
 
-PLC conserva el frontend HTML/CSS y añade una API de desarrollo para simular saldo, envíos, recepciones, historial, detalle y recargas. **No es una criptomoneda desplegada, una billetera custodial ni un servicio de pagos.** Todos los PLC son ficticios. No ingreses datos personales, contraseñas, datos bancarios reales, direcciones Ethereum reales ni frases semilla.
+PLC conserva el frontend HTML/CSS y añade una API de desarrollo para simular saldo, envíos, recepciones, historial, detalle y recargas. **No es una criptomoneda, una billetera custodial ni un servicio de pagos.** Todos los PLC son ficticios. No ingreses datos personales, datos bancarios reales, direcciones Ethereum reales ni frases semilla. El proyecto PostgreSQL de Neon ya está preparado; la publicación del servicio en Render sigue pendiente.
 
 ## Inicio rápido
 
@@ -26,10 +26,17 @@ La suite incluye pruebas del adaptador PostgreSQL, por eso requiere instalar `pg
 | Variable | Predeterminado | Uso |
 | --- | --- | --- |
 | `PORT` | `3000` | Puerto HTTP; usa otro si está ocupado. |
+| `HOST` | `127.0.0.1` | Usa `0.0.0.0` solo para un despliegue protegido; activa los requisitos de las tres variables siguientes. |
+| `PUBLIC_ORIGIN` | Sin valor | Origen HTTPS público exacto, sin ruta. Si falta en Render, se usa `RENDER_EXTERNAL_URL`. |
+| `PLC_DEMO_PASSWORD` | Sin valor | Contraseña de al menos 16 caracteres para el acceso Basic Auth con usuario `demo` en modo público. Nunca se guarda en Git. |
 | `PLC_DATA_FILE` | `backend/storage/demo.json` | Archivo JSON de desarrollo; las rutas relativas se resuelven desde el directorio de ejecución. |
-| `DATABASE_URL` | Sin valor | Si está definida, usa PostgreSQL en vez del archivo JSON. No hay conversión automática de datos entre ambos modos. |
+| `DATABASE_URL` | Sin valor | Si está definida, usa PostgreSQL en vez del archivo JSON. Es obligatoria con `HOST=0.0.0.0`; no hay conversión automática entre ambos modos. |
 
-El host está fijado a `127.0.0.1` para que la demo no se publique accidentalmente en la red. No existe modo producción. No se lee `.env` automáticamente; configura variables en el entorno antes de iniciar.
+Por defecto el servidor escucha solo en `127.0.0.1`. Al usar `HOST=0.0.0.0`, exige origen HTTPS, contraseña de demo y PostgreSQL para evitar publicar un servidor abierto o un archivo efímero. Sigue siendo una **demo compartida**, sin autenticación de usuarios individuales. No se lee `.env` automáticamente; configura variables en el entorno antes de iniciar.
+
+### Publicación en Render con Neon
+
+El manifiesto [`render.yaml`](render.yaml) prepara un Web Service del plan Free que entrega frontend y API desde el mismo origen, migra el esquema al arrancar y utiliza Neon como base PostgreSQL. Render solicitará `DATABASE_URL` y `PLC_DEMO_PASSWORD` como secretos. El código se entrega desde GitHub a Render; Render se conecta a Neon mediante `DATABASE_URL`. GitHub no necesita credenciales de Neon. Sigue la [guía paso a paso de Render y Neon](docs/hosting-render-neon.md) para crear los servicios y comprobar saldo, operaciones e historial. El repositorio por sí solo no crea ni despliega las cuentas externas.
 
 PowerShell:
 
@@ -87,6 +94,7 @@ El servidor también entrega los archivos públicos. No necesitas dos servidores
 plc/
 ├── .gitignore                  # excluye persistencia, secretos, logs y node_modules
 ├── package.json                # Node >=22; start, test, db:migrate; pg opcional en ejecución
+├── render.yaml                 # Web Service Free en Render; secretos solicitados al crear el Blueprint
 ├── README.md                   # contrato y guía de ejecución del proyecto
 ├── index.html                  # portada, comunidad y FAQ de la demo
 ├── assets/
@@ -103,8 +111,8 @@ plc/
 │   ├── detalle.html            # detalle por id; estado claro si no existe
 │   └── perfil.html             # perfil seed de solo lectura; seguridad no implementada
 ├── backend/
-│   ├── config.js               # rutas, DATABASE_URL, entorno, host y límite de cuerpo
-│   ├── server.js               # HTTP, cabeceras, origen, archivos públicos y errores
+│   ├── config.js               # rutas, DATABASE_URL, origen público, acceso demo y límite de cuerpo
+│   ├── server.js               # HTTP, Basic Auth público, cabeceras, origen, archivos y errores
 │   ├── models/transaction.js   # ApiError, validación, centésimas y creación de transacción
 │   ├── routes/api.js           # GET/POST, lectura limitada del cuerpo y rutas de API
 │   ├── services/
@@ -123,12 +131,12 @@ plc/
 │   ├── migrate.js              # aplica el esquema con DATABASE_URL
 │   └── diagrama-er.md          # relaciones editables en Mermaid
 └── docs/
-    ├── plc-arquitectura.drawio # diagrama previo conservado como referencia histórica
-    ├── demo-arquitectura.drawio # nuevo diagrama editable de la implementación actual
+    ├── plc-arquitectura.drawio # diagrama editable único de frontend, API, seed y persistencia
     ├── arquitectura.md        # decisiones, modelo, consistencia y límites
     ├── interacciones.md       # contrato de cada interacción frontend/backend y Figma
     ├── verificacion.md        # evidencia de pruebas y lista de comprobación visual
     ├── cambios.md             # inventario histórico de la primera entrega
+    ├── hosting-render-neon.md  # creación, secretos, despliegue y verificación de la demo
     └── aws-free-tier.md       # propuesta privada de prueba en AWS y control de coste
 ```
 
@@ -184,19 +192,19 @@ Errores: 400 validación/JSON/clave; 403 host u origen externo; 404 ruta/transac
 
 ## Seguridad y alcance demo
 
-- Servidor limitado a loopback, validación de Host/Origin y bloqueo de `Sec-Fetch-Site: cross-site`; sin CORS abierto.
+- El modo local escucha solo en loopback. El modo público exige origen HTTPS, PostgreSQL y `PLC_DEMO_PASSWORD`; valida Host/Origin y bloquea `Sec-Fetch-Site: cross-site`, sin CORS abierto. Solo `GET /api/health` queda sin Basic Auth para el chequeo de Render.
 - POST exige JSON y clave; límites de tamaño, montos y texto. Dinero ficticio calculado con enteros.
 - Lista permitida de archivos estáticos: el servidor no publica `.git`, backend, persistencia o configuración.
 - CSP, `nosniff`, `no-referrer`, `no-store` y protección contra marcos. Render de contenido dinámico con `textContent`, no HTML interpolado.
 - En modo JSON, persistencia ignorada por Git, archivo temporal y cambio de nombre, sin garantizar durabilidad de base de datos ante cortes de energía. Un archivo ilegible bloquea el inicio: no se sustituye silenciosamente por seed. En PostgreSQL, el operador debe proteger URL, acceso, respaldos y transporte; la demo no configura esto por sí sola.
-- Sin autenticación, autorización multiusuario, cifrado de base de datos, rate limiting, auditoría inmutable ni defensa completa contra actores locales. **No publicar este servidor en Internet.**
+- La contraseña pública restringe el acceso a **una única cuenta demo compartida**. No hay registro/login PLC, autorización multiusuario, cifrado de base de datos administrado por la app, rate limiting ni auditoría inmutable. Publica solo para pruebas con personas de confianza; no introduzcas datos reales.
 - Banco: solo etiqueta genérica y referencia `DEMO-BANCO-001`, sin proveedor ni cuenta utilizable.
 - Ethereum: solo opción de simulación; no RPC, MetaMask, contrato, red, firma, hash real, conversión ETH/PLC ni gas.
 - Perfil y seguridad son información de demo, no funciones reales de cuenta. QR ficticio anterior retirado para no aparentar una dirección operativa.
 
 ## Documentación y Figma
 
-Consulta [arquitectura](docs/arquitectura.md), [interacciones](docs/interacciones.md), [verificación](docs/verificacion.md), [modelo relacional](plc_bd/README.md) y [prueba privada en AWS](docs/aws-free-tier.md). El [inventario de cambios](docs/cambios.md) describe la primera entrega. Abre `docs/demo-arquitectura.drawio` en diagrams.net para editarlo; representa la fase JSON y el archivo previo se conserva.
+Consulta [arquitectura](docs/arquitectura.md), [interacciones](docs/interacciones.md), [verificación](docs/verificacion.md), [modelo relacional](plc_bd/README.md), [Render con Neon](docs/hosting-render-neon.md) y [prueba privada en AWS](docs/aws-free-tier.md). El [inventario de cambios](docs/cambios.md) describe la primera entrega. Abre [`docs/plc-arquitectura.drawio`](docs/plc-arquitectura.drawio) en diagrams.net: es el diagrama editable único y corresponde al frontend, la API y ambos modos de persistencia. El diagrama alternativo obsoleto se retiró para evitar duplicidades.
 
 [Figma: Proletarian Coin — Demo e interacciones backend](https://www.figma.com/design/oO77Doeh7yNvOOfZCaPusV). Se creó el archivo en el equipo personal, pero **la carga de pantallas y anotaciones quedó bloqueada por el límite de llamadas de Figma Starter**. El archivo aún está vacío; la carpeta solicitada tampoco pudo crearse: la interfaz de Figma indica que crear más carpetas requiere el plan Profesional. `docs/interacciones.md` contiene el material preparado para completar esa entrega sin reinterpretar el backend.
 
@@ -207,4 +215,4 @@ Consulta [arquitectura](docs/arquitectura.md), [interacciones](docs/interaccione
 3. Endurecer la opción PostgreSQL actual con migraciones versionadas, pruebas de concurrencia, respaldos y libro mayor de doble entrada antes de soportar cuentas múltiples.
 4. Diseñar autenticación real, autorización por cuenta, gestión segura de sesiones y pruebas de seguridad.
 5. Separar una eventual integración bancaria/blockchain en adaptadores auditados con entornos sandbox. Definir cumplimiento aplicable y operación antes de considerar dinero real.
-6. Añadir CI, pruebas de navegador, monitoreo, respaldo y proceso de despliegue revisado. Esta demo no constituye esa plataforma de producción.
+6. Crear el proyecto de Neon y el Blueprint de Render, probar la migración y verificar en HTTPS las operaciones ficticias; después añadir CI, pruebas de navegador, monitoreo y respaldo. Esta demo no constituye una plataforma de producción.

@@ -43,4 +43,4 @@ Una versión real necesitaría identidad, autorización por recurso, ledger tran
 
 ## Diagrama
 
-`demo-arquitectura.drawio` representa las capas actuales y el fallback. `plc-arquitectura.drawio` es el documento original, conservado sin cambios; no es la fuente contractual de esta API.
+[`plc-arquitectura.drawio`](plc-arquitectura.drawio) es el único diagrama editable de arquitectura. Muestra el frontend, la API, el seed, el fallback de solo lectura y las dos opciones de persistencia (JSON local o PostgreSQL en Neon). Sustituye los diagramas anteriores, que mezclaban una simulación solo en JavaScript con el backend actual.
