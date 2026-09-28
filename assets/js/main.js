@@ -4,6 +4,14 @@ const money = value => new Intl.NumberFormat('es-CL', { minimumFractionDigits: 2
 const label = type => ({sent:'Enviado', received:'Recibido', topup:'Recarga'})[type] || type;
 const sign = type => type === 'sent' ? '−' : '+';
 const isPage = location.pathname.includes('/pages/');
+const isGithubPages = location.hostname === 'ddepazos.github.io' && location.pathname.startsWith('/plc/');
+const liveOrigin = 'https://plc-demo.onrender.com';
+function liveHref(href) {
+  const url = new URL(href, location.href);
+  if (!isGithubPages || url.origin !== location.origin || !/^\/plc\/pages\/[a-z]+\.html$/.test(url.pathname)) return href;
+  return liveOrigin + url.pathname.slice('/plc'.length) + url.search + url.hash;
+}
+if (isGithubPages) $$('a[href]').forEach(link => { link.href = liveHref(link.getAttribute('href')); });
 let state, online = false;
 const pending = new Map();
 const status = document.createElement('p');
@@ -12,6 +20,13 @@ status.setAttribute('role', 'status');
 status.textContent = 'Cargando demo…';
 ($('main') || document.body).prepend(status);
 const connectedMessage = 'DEMO · API conectada · PLC ficticios, sin pagos reales';
+function showStaticNotice() {
+  status.textContent = 'Vista de GitHub Pages · datos de ejemplo. Para operar y guardar los movimientos, abre la demo conectada. ';
+  const link = document.createElement('a');
+  link.href = liveOrigin + '/pages/dashboard.html';
+  link.textContent = 'Abrir demo conectada';
+  status.append(link);
+}
 function text(selector, value) { $$(selector).forEach(el => el.textContent = value); }
 async function request(url, options = {}) {
   const response = await fetch(url, { ...options, signal: AbortSignal.timeout(6000), cache: 'no-store' });
@@ -27,7 +42,7 @@ function rows(container, txs) {
   txs.filter(tx => `${label(tx.type)} ${tx.date} ${tx.reference} ${tx.recipient || ''} ${tx.method || ''}`.toLowerCase().includes(query)).forEach(tx => {
     const link = document.createElement('a');
     link.className = 'transaction-row';
-    link.href = 'detalle.html?id=' + encodeURIComponent(tx.id);
+    link.href = liveHref('detalle.html?id=' + encodeURIComponent(tx.id));
     const title = document.createElement('span');
     title.textContent = `${label(tx.type)} · ${tx.date.slice(0, 10)}`;
     const amount = document.createElement('strong');
@@ -62,6 +77,15 @@ async function detail() {
   } catch (error) { text('#detail-message', error.message); }
 }
 async function load() {
+  if (isGithubPages) {
+    online = false;
+    showStaticNotice();
+    try {
+      state = await request((isPage ? '../' : '') + 'data/plc-demo.json');
+      render(); await detail();
+    } catch { status.append(' No se pudieron cargar los datos de ejemplo.'); }
+    return;
+  }
   try {
     state = await request('/api/state'); online = true;
     status.textContent = connectedMessage;
@@ -109,7 +133,7 @@ $('.js-receive')?.addEventListener('submit', event => { event.preventDefault(); 
 $('#transaction-search')?.addEventListener('input', () => { if (state) rows($('#transaction-list'), state.transactions); });
 $('#topup-method')?.addEventListener('change', () => { text('#method-help', $('#topup-method').value === 'bank' ? 'Cuenta ficticia DEMO-BANCO-001. Sin número bancario real ni transferencia.' : 'Ethereum de demostración. No solicita wallet, red, gas, ETH ni firma. El monto está expresado en PLC ficticios.'); });
 window.addEventListener('focus', async () => {
-  if (!state || pending.size) return;
+  if (isGithubPages || !state || pending.size) return;
   try {
     state = await request('/api/state');
     online = true;

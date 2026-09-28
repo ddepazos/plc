@@ -5,6 +5,10 @@
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
+        <mxCell id="github-pages" value="GitHub Pages · portada y seed&#10;Vista estática de solo lectura&#10;Abrir demo conectada → Render" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#E8F3FF;strokeColor=#6C8EBF;fontColor=#222222;fontSize=15;" vertex="1" parent="1"><mxGeometry x="50" y="350" width="270" height="140" as="geometry" /></mxCell>
+        <mxCell id="github-source" value="GitHub · ddepazos/plc · main&#10;Código + render.yaml&#10;Auto-deploy pendiente de verificar" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#E8F3FF;strokeColor=#6C8EBF;fontColor=#222222;fontSize=15;" vertex="1" parent="1"><mxGeometry x="750" y="350" width="330" height="130" as="geometry" /></mxCell>
+        <mxCell id="pages-to-app" value="enlace HTTPS a Render" style="edgeStyle=orthogonalEdgeStyle;html=0;endArrow=block;" edge="1" parent="1" source="github-pages" target="frontend"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="source-to-render" value="desplegar código" style="edgeStyle=orthogonalEdgeStyle;html=0;endArrow=block;dashed=1;" edge="1" parent="1" source="github-source" target="server"><mxGeometry relative="1" as="geometry" /></mxCell>
         <mxCell id="title" value="PLC · Arquitectura de la demo" style="text;html=0;align=center;fontSize=28;fontStyle=1;fontColor=#E10600;" vertex="1" parent="1"><mxGeometry x="550" y="25" width="850" height="50" as="geometry" /></mxCell>
         <mxCell id="browser" value="Visitante de la demo&#10;Navegador" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#171719;strokeColor=#E10600;fontColor=#FFFFFF;fontSize=15;" vertex="1" parent="1"><mxGeometry x="50" y="150" width="230" height="100" as="geometry" /></mxCell>
         <mxCell id="frontend" value="Frontend · HTML/CSS/main.js&#10;Saldo, enviar, recibir, recargar, historial y detalle" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#171719;strokeColor=#E10600;fontColor=#FFFFFF;fontSize=15;" vertex="1" parent="1"><mxGeometry x="350" y="130" width="320" height="140" as="geometry" /></mxCell>

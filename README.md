@@ -1,8 +1,12 @@
 # Proletarian Coin — demo con API y persistencia JSON o PostgreSQL
 
-PLC conserva el frontend HTML/CSS y añade una API de desarrollo para simular saldo, envíos, recepciones, historial, detalle y recargas. **No es una criptomoneda, una billetera custodial ni un servicio de pagos.** Todos los PLC son ficticios. No ingreses datos personales, datos bancarios reales, direcciones Ethereum reales ni frases semilla. El proyecto PostgreSQL de Neon ya está preparado; la publicación del servicio en Render sigue pendiente.
+PLC conserva el frontend HTML/CSS y añade una API de desarrollo para simular saldo, envíos, recepciones, historial, detalle y recargas. **No es una criptomoneda, una billetera custodial ni un servicio de pagos.** Todos los PLC son ficticios. No ingreses datos personales, datos bancarios reales, direcciones Ethereum reales ni frases semilla. El proyecto `plc-demo` de Neon ya tiene las seis tablas de PLC y el servicio `plc-demo` de Render está publicado en [https://plc-demo.onrender.com](https://plc-demo.onrender.com) en el plan Free. El despliegue `b520071` registró la migración PostgreSQL y el mensaje «Your service is live»; aún falta comprobar las operaciones completas desde el navegador.
 
 ## Inicio rápido
+
+**Demo conectada:** [abrir PLC en Render](https://plc-demo.onrender.com/pages/dashboard.html). Usa el usuario `demo` y la contraseña configurada en Render. Saldo, envíos, recepciones, recargas e historial usan la API y PostgreSQL de Neon; todas las operaciones son ficticias.
+
+**GitHub Pages:** publica la portada y una vista de ejemplo de solo lectura. Los enlaces a las pantallas de la billetera abren Render, donde se ejecuta el backend. La banda «Abrir demo conectada» permite entrar desde una pantalla antigua de Pages. No se guardan contraseñas en JavaScript ni se conecta el navegador directamente a Neon. El primer acceso a Render Free puede tardar mientras el servicio se reactiva.
 
 Requisito: Node.js 22 o superior con npm. El modo JSON usa solo módulos incluidos en Node.js. PostgreSQL es opcional y usa la dependencia `pg` declarada en `package.json`. No hay proceso de compilación.
 
@@ -36,7 +40,7 @@ Por defecto el servidor escucha solo en `127.0.0.1`. Al usar `HOST=0.0.0.0`, exi
 
 ### Publicación en Render con Neon
 
-El manifiesto [`render.yaml`](render.yaml) prepara un Web Service del plan Free que entrega frontend y API desde el mismo origen, migra el esquema al arrancar y utiliza Neon como base PostgreSQL. Render solicitará `DATABASE_URL` y `PLC_DEMO_PASSWORD` como secretos. El código se entrega desde GitHub a Render; Render se conecta a Neon mediante `DATABASE_URL`. GitHub no necesita credenciales de Neon. Sigue la [guía paso a paso de Render y Neon](docs/hosting-render-neon.md) para crear los servicios y comprobar saldo, operaciones e historial. El repositorio por sí solo no crea ni despliega las cuentas externas.
+El manifiesto [`render.yaml`](render.yaml) configura el Web Service Free que entrega frontend y API desde el mismo origen, migra el esquema al arrancar y utiliza Neon como base PostgreSQL. `DATABASE_URL` y `PLC_DEMO_PASSWORD` son secretos del entorno de Render; GitHub no necesita credenciales de Neon. Consulta la [guía de Render y Neon](docs/hosting-render-neon.md) para comprobar saldo, operaciones e historial y gestionar el servicio. El despliegue automático desde GitHub **aún no está verificado ni configurado**: requiere conectar GitHub como proveedor de código en Render. La sincronización automática del Blueprint es un ajuste diferente y tampoco confirma por sí sola el despliegue de cada cambio de código.
 
 PowerShell:
 
@@ -215,4 +219,4 @@ Consulta [arquitectura](docs/arquitectura.md), [interacciones](docs/interaccione
 3. Endurecer la opción PostgreSQL actual con migraciones versionadas, pruebas de concurrencia, respaldos y libro mayor de doble entrada antes de soportar cuentas múltiples.
 4. Diseñar autenticación real, autorización por cuenta, gestión segura de sesiones y pruebas de seguridad.
 5. Separar una eventual integración bancaria/blockchain en adaptadores auditados con entornos sandbox. Definir cumplimiento aplicable y operación antes de considerar dinero real.
-6. Crear el proyecto de Neon y el Blueprint de Render, probar la migración y verificar en HTTPS las operaciones ficticias; después añadir CI, pruebas de navegador, monitoreo y respaldo. Esta demo no constituye una plataforma de producción.
+6. Verificar en HTTPS las operaciones ficticias de [la demo en Render](https://plc-demo.onrender.com) y su persistencia en Neon. Después, conectar GitHub como proveedor en Render y comprobar el despliegue automático de un cambio en `main`, distinguiéndolo de Blueprint Auto Sync; añadir CI, pruebas de navegador, monitoreo y respaldo. Esta demo no constituye una plataforma de producción.
