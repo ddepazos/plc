@@ -8,6 +8,7 @@ const isGithubPages = location.hostname === 'ddepazos.github.io' && location.pat
 const liveOrigin = 'https://plc-demo.onrender.com';
 function liveHref(href) {
   const url = new URL(href, location.href);
+  if (url.pathname === '/plc/pages/perfil.html') return href;
   if (!isGithubPages || url.origin !== location.origin || !/^\/plc\/pages\/[a-z]+\.html$/.test(url.pathname)) return href;
   return liveOrigin + url.pathname.slice('/plc'.length) + url.search + url.hash;
 }
@@ -55,8 +56,8 @@ function render() {
   const user = state.users[0];
   for (const field of ['name','email','walletAddress']) text(`[data-plc="${field === 'walletAddress' ? 'wallet' : field}"]`, user[field]);
   text('[data-plc="balance"]', money(user.balance));
-  text('[data-plc="sessions"]', 'Demo · sin sesiones reales');
-  text('[data-plc="two-factor"]', 'No implementado en demo');
+  text('[data-plc="sessions"]', 'No disponibles en esta demo');
+  text('[data-plc="two-factor"]', 'No disponible en esta demo');
   rows($('#transaction-list'), state.transactions);
   rows($('#recent-transactions'), state.transactions.slice(0, 3));
   rows($('#latest-transaction'), state.transactions.slice(0, 1));
