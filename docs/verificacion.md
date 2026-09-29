@@ -1,4 +1,10 @@
-# Verificación — 24 septiembre 2026
+# Verificación
+
+## Estado del despliegue — 28 septiembre 2026
+
+El responsable de la demo confirmó el acceso público mediante HTTP Basic. El estado actual de Render, Neon, la migración al iniciar y el health check está recogido en la [guía de alojamiento](hosting-render-neon.md); allí se mantienen también las incidencias pendientes del Blueprint `plcdb` (**Failed sync**) y de SSL en `pg`.
+
+Sigue pendiente la comprobación funcional completa en el despliegue público y de la persistencia de sus operaciones en Neon. Esta actualización es documental: no se ejecutaron nuevas pruebas funcionales ni se resolvieron esas incidencias. La evidencia siguiente corresponde a las pruebas del **24 de septiembre de 2026**.
 
 ## Automatizada, ejecutada
 

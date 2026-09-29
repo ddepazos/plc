@@ -1,6 +1,6 @@
 # PLC en Render + Neon: demo protegida
 
-Esta guía describe **una sola instancia web gratuita de Render** que sirve el frontend y la API del repositorio, con una base PostgreSQL de **Neon**. El archivo raíz [`render.yaml`](../render.yaml) describe el servicio, pero no contiene credenciales. **Estado comprobado:** el proyecto gratuito `plc-demo` de Neon existe, su rama `production` contiene la base `neondb` y las seis tablas de PLC. El servicio Web Free `plc-demo` de Render existe en [https://plc-demo.onrender.com](https://plc-demo.onrender.com); el despliegue `b520071` registró la migración PostgreSQL y «Your service is live». Eso acredita el arranque, pero todavía falta comprobar desde el navegador cada operación de la demo. Todos los PLC y las recargas siguen siendo ficticios.
+Esta guía describe **una sola instancia web gratuita de Render** que sirve el frontend y la API del repositorio, con una base PostgreSQL de **Neon**. El archivo raíz [`render.yaml`](../render.yaml) describe el servicio, pero no contiene credenciales. **Estado confirmado al 28 de septiembre de 2026:** la rama `main` de `ddepazos/plc` está desplegada en Render como `plc-demo`, con backend Node.js y persistencia PostgreSQL en Neon. El acceso a la URL pública con HTTP Basic y usuario `demo` está confirmado; la contraseña permanece únicamente en la variable secreta `PLC_DEMO_PASSWORD` de Render. Como evidencia previa, el proyecto gratuito `plc-demo` de Neon existe, su rama `production` contiene la base `neondb` y las seis tablas de PLC. El servicio Web Free `plc-demo` de Render existe en [https://plc-demo.onrender.com](https://plc-demo.onrender.com); el despliegue `b520071` registró la migración PostgreSQL y «Your service is live». Eso acredita el arranque, pero todavía falta comprobar desde el navegador cada operación de la demo. Todos los PLC y las recargas siguen siendo ficticios.
 
 ## Configuración existente y secretos
 
@@ -17,7 +17,7 @@ La aplicación dinámica se abre en `https://plc-demo.onrender.com/pages/dashboa
 ## Despliegue y comprobación en Render
 
 1. En Render, revisa el servicio existente `plc-demo`: tipo **Web Service**, entorno Node, plan **Free** y URL [https://plc-demo.onrender.com](https://plc-demo.onrender.com). El Blueprint no declara una base Render Postgres: usa el proyecto de Neon descrito arriba.
-2. En **Deploys**, identifica el despliegue `b520071`. Su registro ya mostró la migración PostgreSQL y «Your service is live». `render.yaml` instala `pg`, ejecuta `npm run db:migrate` y luego `npm start`. `schema.sql` usa `CREATE ... IF NOT EXISTS`, de modo que el esquema puede aplicarse otra vez tras un reinicio. Una falla de conexión o migración detiene el arranque.
+2. Como evidencia histórica de arranque, el despliegue `b520071` ya mostró la migración PostgreSQL y «Your service is live». `render.yaml` instala `pg`, ejecuta `npm run db:migrate` y luego `npm start`. `schema.sql` usa `CREATE ... IF NOT EXISTS`, de modo que el esquema puede aplicarse otra vez tras un reinicio. Una falla de conexión o migración detiene el arranque.
 3. Abre la URL pública en el navegador con el usuario `demo` y la contraseña configurada. El frontend y la API comparten origen. Comprueba saldo, recepción, envío, recarga ficticia, historial y detalle, y confirma que los cambios persisten en Neon. **Esta comprobación funcional aún está pendiente.** Las acciones cambian una sola billetera ficticia compartida; los participantes verán las operaciones de los demás.
 4. Conserva `DATABASE_URL` y `PLC_DEMO_PASSWORD` únicamente en **Environment** de Render. No configures `PLC_DATA_FILE`: la persistencia de archivos del servicio es efímera.
 
@@ -28,6 +28,13 @@ El servicio se creó desde la URL pública del repositorio. **No se ha verificad
 **Blueprint Auto Sync** es independiente: controla cuándo Render aplica los cambios de `render.yaml`, mientras que **Auto-Deploy** controla los cambios de código del servicio. Comprueba ambos ajustes por separado. El manifiesto actual no fija `autoDeployTrigger`: Render usa `commit` para un servicio nuevo, pero conserva el valor existente de uno ya creado. La sincronización de un Blueprint puede sobrescribir cambios manuales que entren en conflicto con su configuración; revisa la fuente tras sincronizar.
 
 Render proporciona `PORT` y `RENDER_EXTERNAL_URL` automáticamente. `HOST=0.0.0.0` permite que su proxy alcance el proceso. El backend usa `RENDER_EXTERNAL_URL` para validar el Host y el Origin públicos cuando no se define `PUBLIC_ORIGIN`. Si más adelante conectas un dominio personalizado, configura `PUBLIC_ORIGIN=https://tu-dominio` en el entorno de Render y comprueba de nuevo el chequeo de salud. Render envía el Host del dominio personalizado verificado en sus chequeos HTTP.
+
+## Incidencias pendientes
+
+- **Blueprint `plcdb`: Failed sync.** Render muestra ese estado de sincronización como incidencia pendiente. El servicio web `plc-demo` está accesible; su disponibilidad no demuestra que el Blueprint se haya sincronizado correctamente. Falta revisar el error de sincronización y su causa antes de aplicar una corrección. No se da por resuelto ni se cambia `render.yaml` en esta actualización documental.
+- **Advertencia SSL de `pg`.** Se ha observado una advertencia SSL del cliente PostgreSQL y sigue pendiente de corregir. Falta revisar el mensaje exacto y la configuración TLS para determinar la solución; no se atribuye una causa no confirmada ni se recomienda desactivar la verificación TLS. Esta actualización no modifica dependencias, conexiones ni secretos.
+
+El estado anterior recoge lo confirmado por el responsable de la demo. La apertura con Basic Auth y la migración aplicada al iniciar no sustituyen la prueba completa de saldo, transferencias, recargas e historial con persistencia en Neon, que continúa pendiente. Tampoco acreditan por sí solas el despliegue automático de futuros commits de `main`.
 
 ## Comprobación y solución de problemas
 

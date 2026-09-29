@@ -1,10 +1,10 @@
 # Proletarian Coin — demo con API y persistencia JSON o PostgreSQL
 
-PLC conserva el frontend HTML/CSS y añade una API de desarrollo para simular saldo, envíos, recepciones, historial, detalle y recargas. **No es una criptomoneda, una billetera custodial ni un servicio de pagos.** Todos los PLC son ficticios. No ingreses datos personales, datos bancarios reales, direcciones Ethereum reales ni frases semilla. El proyecto `plc-demo` de Neon ya tiene las seis tablas de PLC y el servicio `plc-demo` de Render está publicado en [https://plc-demo.onrender.com](https://plc-demo.onrender.com) en el plan Free. El despliegue `b520071` registró la migración PostgreSQL y el mensaje «Your service is live»; aún falta comprobar las operaciones completas desde el navegador.
+PLC conserva el frontend HTML/CSS y añade una API de desarrollo para simular saldo, envíos, recepciones, historial, detalle y recargas. **No es una criptomoneda, una billetera custodial ni un servicio de pagos.** Todos los PLC son ficticios. No ingreses datos personales, datos bancarios reales, direcciones Ethereum reales ni frases semilla. **Estado confirmado al 28 de septiembre de 2026:** la rama `main` de `ddepazos/plc` está desplegada en Render como `plc-demo`, con backend Node.js y persistencia PostgreSQL en Neon. El acceso a la URL pública mediante HTTP Basic está confirmado. El proyecto `plc-demo` de Neon ya tiene las seis tablas de PLC y el servicio `plc-demo` de Render está publicado en [https://plc-demo.onrender.com](https://plc-demo.onrender.com) en el plan Free. El despliegue `b520071` registró la migración PostgreSQL y el mensaje «Your service is live»; aún falta comprobar las operaciones completas desde el navegador.
 
 ## Inicio rápido
 
-**Demo conectada:** [abrir PLC en Render](https://plc-demo.onrender.com/pages/dashboard.html). Usa el usuario `demo` y la contraseña configurada en Render. Saldo, envíos, recepciones, recargas e historial usan la API y PostgreSQL de Neon; todas las operaciones son ficticias.
+**Demo conectada:** [abrir PLC en Render](https://plc-demo.onrender.com/pages/dashboard.html). Usa HTTP Basic con el usuario `demo` y la contraseña almacenada únicamente en la variable secreta `PLC_DEMO_PASSWORD` de Render. Saldo, envíos, recepciones, recargas e historial usan la API y PostgreSQL de Neon; todas las operaciones son ficticias.
 
 **GitHub Pages:** publica la portada y una vista de ejemplo de solo lectura. Los enlaces a las pantallas de la billetera abren Render, donde se ejecuta el backend. La banda «Abrir demo conectada» permite entrar desde una pantalla antigua de Pages. No se guardan contraseñas en JavaScript ni se conecta el navegador directamente a Neon. El primer acceso a Render Free puede tardar mientras el servicio se reactiva.
 
@@ -39,6 +39,8 @@ La suite incluye pruebas del adaptador PostgreSQL, por eso requiere instalar `pg
 Por defecto el servidor escucha solo en `127.0.0.1`. Al usar `HOST=0.0.0.0`, exige origen HTTPS, contraseña de demo y PostgreSQL para evitar publicar un servidor abierto o un archivo efímero. Sigue siendo una **demo compartida**, sin autenticación de usuarios individuales. No se lee `.env` automáticamente; configura variables en el entorno antes de iniciar.
 
 ### Publicación en Render con Neon
+
+El health check es [`GET /api/health`](https://plc-demo.onrender.com/api/health), sin Basic Auth. Quedan pendientes el Blueprint `plcdb` de Render, que muestra **Failed sync**, y una advertencia SSL del cliente PostgreSQL `pg`. Consulta el [estado e incidencias pendientes](docs/hosting-render-neon.md#incidencias-pendientes) para su seguimiento.
 
 El manifiesto [`render.yaml`](render.yaml) configura el Web Service Free que entrega frontend y API desde el mismo origen, migra el esquema al arrancar y utiliza Neon como base PostgreSQL. `DATABASE_URL` y `PLC_DEMO_PASSWORD` son secretos del entorno de Render; GitHub no necesita credenciales de Neon. Consulta la [guía de Render y Neon](docs/hosting-render-neon.md) para comprobar saldo, operaciones e historial y gestionar el servicio. El despliegue automático desde GitHub **aún no está verificado ni configurado**: requiere conectar GitHub como proveedor de código en Render. La sincronización automática del Blueprint es un ajuste diferente y tampoco confirma por sí sola el despliegue de cada cambio de código.
 
