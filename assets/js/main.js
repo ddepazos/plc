@@ -5,14 +5,9 @@ const label = type => ({sent:'Enviado', received:'Recibido', topup:'Recarga'})[t
 const sign = type => type === 'sent' ? '−' : '+';
 const isPage = location.pathname.includes('/pages/');
 const isGithubPages = location.hostname === 'ddepazos.github.io' && location.pathname.startsWith('/plc/');
-const liveOrigin = 'https://plc-demo.onrender.com';
-function liveHref(href) {
-  const url = new URL(href, location.href);
-  if (url.pathname === '/plc/pages/perfil.html') return href;
-  if (!isGithubPages || url.origin !== location.origin || !/^\/plc\/pages\/[a-z]+\.html$/.test(url.pathname)) return href;
-  return liveOrigin + url.pathname.slice('/plc'.length) + url.search + url.hash;
-}
-if (isGithubPages) $$('a[href]').forEach(link => { link.href = liveHref(link.getAttribute('href')); });
+const isPortfolio = isGithubPages;
+const liveHref = href => href;
+let demo;
 let state, online = false;
 const pending = new Map();
 const status = document.createElement('p');
@@ -22,14 +17,39 @@ status.textContent = 'Cargando demo…';
 ($('main') || document.body).prepend(status);
 const connectedMessage = 'DEMO · API conectada · PLC ficticios, sin pagos reales';
 function showStaticNotice() {
-  status.textContent = 'Vista de GitHub Pages · datos de ejemplo. Para operar y guardar los movimientos, abre la demo conectada. ';
-  const link = document.createElement('a');
-  link.href = liveOrigin + '/pages/dashboard.html';
-  link.textContent = 'Abrir demo conectada';
-  status.append(link);
+  status.textContent = 'Demostración · sin dinero real · tus movimientos se guardan solo en este navegador. ';
+  const reset = document.createElement('button');
+  reset.type = 'button';
+  reset.className = 'btn btn-small btn-ghost';
+  reset.textContent = 'Reiniciar demo';
+  reset.addEventListener('click', async () => {
+    if (!demo || !confirm('¿Reiniciar el saldo y borrar los movimientos de esta demo en este navegador?')) return;
+    try {
+      const perform = () => demo.reset();
+      state = navigator.locks ? await navigator.locks.request('plc-portfolio', perform) : perform();
+      pending.clear(); online = true; render();
+      $$('.form-message').forEach(el => el.textContent = '');
+      showStaticNotice();
+      await detail();
+    } catch (error) { status.append(' ' + error.message); }
+  });
+  status.append(reset);
 }
 function text(selector, value) { $$(selector).forEach(el => el.textContent = value); }
 async function request(url, options = {}) {
+  if (isPortfolio && url.startsWith('/api/')) {
+    if (url === '/api/state') return demo.read();
+    if (url.startsWith('/api/transactions/')) {
+      const tx = demo.read().transactions.find(item => item.id === decodeURIComponent(url.slice('/api/transactions/'.length)));
+      if (!tx) throw new Error('Transacción no encontrada.');
+      return tx;
+    }
+    if (options.method === 'POST') {
+      const perform = () => demo.operate(url, JSON.parse(options.body));
+      return navigator.locks ? navigator.locks.request('plc-portfolio', perform) : perform();
+    }
+    throw new Error('Ruta de demostración desconocida.');
+  }
   const response = await fetch(url, { ...options, signal: AbortSignal.timeout(6000), cache: 'no-store' });
   let result;
   try { result = await response.json(); } catch { throw new Error('Respuesta de API no válida.'); }
@@ -82,9 +102,12 @@ async function load() {
     online = false;
     showStaticNotice();
     try {
-      state = await request((isPage ? '../' : '') + 'data/plc-demo.json');
+      const seed = await request((isPage ? '../' : '') + 'data/plc-demo.json');
+      const { createDemo } = await import('./portfolio-demo.js');
+      demo = createDemo(seed, localStorage);
+      state = demo.read(); online = true;
       render(); await detail();
-    } catch { status.append(' No se pudieron cargar los datos de ejemplo.'); }
+    } catch (error) { status.append(' ' + error.message); }
     return;
   }
   try {
@@ -120,7 +143,7 @@ async function operate(form, endpoint, body) {
     message.textContent = 'Simulación completada. Saldo: ' + money(state.users[0].balance);
     const link = document.createElement('a'); link.href = 'detalle.html?id=' + encodeURIComponent(result.transaction.id); link.textContent = ' Ver detalle'; message.append(link);
   } catch (error) {
-    message.textContent = confirmed ? 'Operación confirmada, pero no se pudo actualizar el saldo. Recarga la página antes de otra operación.' : error.message + ' Si hubo un corte de conexión, reintenta sin cambiar los datos: se usará la misma clave para evitar duplicados.';
+    message.textContent = confirmed ? 'Operación confirmada, pero no se pudo actualizar el saldo. Recarga la página antes de otra operación.' : (isPortfolio ? error.message : error.message + ' Si hubo un corte de conexión, reintenta sin cambiar los datos: se usará la misma clave para evitar duplicados.');
     if (confirmed) online = false;
   } finally { button.disabled = !online; }
 }
@@ -134,16 +157,17 @@ $('.js-receive')?.addEventListener('submit', event => { event.preventDefault(); 
 $('#transaction-search')?.addEventListener('input', () => { if (state) rows($('#transaction-list'), state.transactions); });
 $('#topup-method')?.addEventListener('change', () => { text('#method-help', $('#topup-method').value === 'bank' ? 'Cuenta ficticia DEMO-BANCO-001. Sin número bancario real ni transferencia.' : 'Ethereum de demostración. No solicita wallet, red, gas, ETH ni firma. El monto está expresado en PLC ficticios.'); });
 window.addEventListener('focus', async () => {
-  if (isGithubPages || !state || pending.size) return;
+  if (!state || pending.size) return;
   try {
     state = await request('/api/state');
     online = true;
-    status.textContent = connectedMessage;
+    if (isPortfolio) showStaticNotice(); else status.textContent = connectedMessage;
     render();
     await detail();
   } catch {
     online = false;
-    status.textContent = 'DEMO · Conexión interrumpida. Las operaciones están desactivadas hasta recuperar la API.';
+    if (isPortfolio) { showStaticNotice(); status.append(' No se pudieron leer los datos locales. Usa Reiniciar demo.'); }
+    else status.textContent = 'DEMO · Conexión interrumpida. Las operaciones están desactivadas hasta recuperar la API.';
     if (state) render();
   }
 });

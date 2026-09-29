@@ -6,7 +6,9 @@ PLC conserva el frontend HTML/CSS y añade una API de desarrollo para simular sa
 
 **Demo conectada:** [abrir PLC en Render](https://plc-demo.onrender.com/pages/dashboard.html). Usa el usuario `demo` y la contraseña configurada en Render. Saldo, envíos, recepciones, recargas e historial usan la API y PostgreSQL de Neon; todas las operaciones son ficticias.
 
-**GitHub Pages:** publica la portada y una vista de ejemplo de solo lectura. Los enlaces a las pantallas de la billetera abren Render, donde se ejecuta el backend. La banda «Abrir demo conectada» permite entrar desde una pantalla antigua de Pages. No se guardan contraseñas en JavaScript ni se conecta el navegador directamente a Neon. El primer acceso a Render Free puede tardar mientras el servicio se reactiva.
+**Demo pública para el portafolio:** [abrir la billetera sin contraseña](https://ddepazos.github.io/plc/pages/dashboard.html). GitHub Pages permite simular envíos, recepciones y recargas con un perfil ficticio. Los movimientos se guardan únicamente en `localStorage` de ese navegador, bajo `plc-portfolio-v1`; no se envían a Render ni a Neon. El botón **Reiniciar demo** restaura los 2.450 PLC iniciales y los movimientos de ejemplo. Borrar los datos del sitio también elimina la simulación. No hay registro ni datos personales reales; evita incluirlos en las notas. Si el almacenamiento está bloqueado o lleno, se informa del error sin confirmar la escritura. Las pestañas coordinan escrituras con Web Locks cuando está disponible; en navegadores sin esa API, usa una sola pestaña.
+
+El portafolio debe enlazar a la URL de GitHub Pages anterior. La versión de Render conserva HTTP Basic y la billetera compartida en Neon. El modo público se activa únicamente en `ddepazos.github.io/plc/`; un fallo de API en Render sigue dejando la interfaz en solo lectura.
 
 Requisito: Node.js 22 o superior con npm. El modo JSON usa solo módulos incluidos en Node.js. PostgreSQL es opcional y usa la dependencia `pg` declarada en `package.json`. No hay proceso de compilación.
 
